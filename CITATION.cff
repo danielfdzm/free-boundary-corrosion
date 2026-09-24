@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "Please cite the accompanying paper and this repository when using these materials."
+type: software
+title: "Free-boundary corrosion: numerical experiments"
+authors:
+  - family-names: Fernández
+    given-names: Daniel
+  - family-names: Menezes
+    given-names: Denilson
+repository-code: "https://github.com/danielfdzm/free-boundary-corrosion"
+url: "https://github.com/danielfdzm/free-boundary-corrosion"
+preferred-citation:
+  type: unpublished
+  title: "A free boundary problem for a nonlinear electrochemical model"
+  authors:
+    - family-names: Fernández
+      given-names: Daniel
+    - family-names: Menezes
+      given-names: Denilson

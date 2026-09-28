@@ -1,16 +1,22 @@
-# House style shared by all figures: palette locked to the paper's TikZ colours,
+# Bright scientific palette shared by the current experiment figures.
 # Computer Modern math via LaTeXStrings, 10pt text, no top/right spines.
 using CairoMakie, GeometryBasics, Contour, JLD2, Printf, Statistics, LinearAlgebra
 using FreeBoundaryNumerics
 CairoMakie.activate!(type="pdf")
 
-const WATER = colorant"#125EB9"
-const DEEP = colorant"#0B3C7A"
-const SOLIDDARK = colorant"#703416"
-const SOLIDBASE = colorant"#CD7534"
-const NEUTRAL = colorant"#F5F5F2"
-const WATERFILL = colorant"#78B9F0"
-const ELECTRO = cgrad([DEEP, WATER, NEUTRAL, SOLIDBASE, SOLIDDARK])
+const WATER = colorant"#00A9F4"
+const DEEP = colorant"#283CC9"
+const SOLIDDARK = colorant"#A32BCE"
+const SOLIDBASE = colorant"#FF8A1F"
+const NEUTRAL = colorant"#FAFCFF"
+const WATERFILL = colorant"#78E3FF"
+const MAGENTA = colorant"#ED3D9A"
+const VIOLET = colorant"#7A3FFC"
+const ORDER_COLORS = [WATER, VIOLET, MAGENTA, SOLIDBASE]
+const ELECTRO = cgrad([DEEP, colorant"#00C8F0", NEUTRAL,
+    colorant"#FFD43B", colorant"#F52B83"], [0.0, 0.25, 0.5, 0.75, 1.0])
+const MATERIAL_COLORS = cgrad([colorant"#246BFD", colorant"#00C6E0",
+    colorant"#66E5AD", colorant"#FFE14A", colorant"#FF8A1F"])
 const GREY = colorant"#6E6E6E"
 const WIDTH = 566.0          # px units; with pt_per_unit = 0.75 this is 5.9 in = \textwidth
 const FS = 13.3              # 10 pt
@@ -29,17 +35,8 @@ set_theme!(Theme(
     Scatter=(markersize=6,),
 ))
 
-"Colour of the family member kappa = 2^-k on the viridis scale (k in [0, kmax])."
-kappa_color(k; kmax=8) = get(cgrad(:viridis), 0.92 * k / kmax)
-kappa_style(k) = LINESTYLES[mod1(round(Int, k) + 1, length(LINESTYLES))]
-
-"Colorbar for a kappa family, ticked 1, 1/4, 1/16, 1/64, 1/256."
-function kappa_colorbar!(pos; kmax=8, label=L"\kappa", vertical=true)
-    ticks = 0:2:kmax
-    labels = [k == 0 ? "1" : "1/$(2^k)" for k in ticks]
-    Colorbar(pos; colormap=cgrad(:viridis)[range(0, 0.92, length=64)], limits=(0, kmax), ticks=(collect(ticks), labels),
-        label=label, vertical=vertical, flipaxis=vertical)
-end
+"Bright, distinguishable colour of the family member kappa = 2^-k."
+kappa_color(k; kmax=8) = get(cgrad([DEEP, WATER, MAGENTA, SOLIDBASE]), k / kmax)
 
 panel_label!(fig, pos, txt) = Label(fig[pos..., TopLeft()], txt; font=:bold, fontsize=FS, padding=(0, 6, 4, 0), halign=:right)
 

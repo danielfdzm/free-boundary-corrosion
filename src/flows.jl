@@ -50,7 +50,7 @@ end
 Coupled evolution of the radial graph by Heun's method: the electrical problem
 is solved at the beginning and at the predicted end of every step, the radii
 are advanced with the averaged speeds, and the fitted mesh is rebuilt at fixed
-connectivity. `stop(t, R, history)` may end the run early (corner runs).
+connectivity. `stop(t, R, history)` may end the run early.
 """
 function evolve_coupled(P::Params, mat::Material, R0::AbstractVector; nr::Int, dt::Real, T::Real,
         grading::Real=1.0, store_every::Int=1, snapshot_times=Float64[], stop=nothing, verbose=false)

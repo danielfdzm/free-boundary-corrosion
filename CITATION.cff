@@ -11,7 +11,7 @@ repository-code: "https://github.com/danielfdzm/free-boundary-corrosion"
 url: "https://github.com/danielfdzm/free-boundary-corrosion"
 preferred-citation:
   type: unpublished
-  title: "A free boundary problem for a nonlinear electrochemical model"
+  title: "Low-conductivity limit for a nonlinear free boundary problem in corrosion modeling"
   authors:
     - family-names: Fernández
       given-names: Daniel

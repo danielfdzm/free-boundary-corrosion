@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Experiments E1–E6 of the paper. Each writes one JLD2 file of plain
+# Experiments E1–E5 of the paper. Each writes one JLD2 file of plain
 # arrays and dictionaries; figures and tables are produced separately.
 # ---------------------------------------------------------------------------
 
@@ -325,7 +325,11 @@ function run_E5(outdir::AbstractString; quick::Bool=false)
     kappas = _kappas(ks)
     P = Params(kappa=1.0)
     theta = theta_grid(nt)
-    shapes = quick ? [("disk", ones(nt), ks)] : [("disk", ones(nt), ks), ("flower", flower_radius.(theta, 0.15, 5), [0, 2, 4, 6, 8])]
+    shapes = [("disk", ones(nt), ks)]
+    out["material"] = M2.name; out["i_star"] = 1.0
+    out["phieq_formula"] = "0.30*(x^2-y^2)+0.15*x*y"
+    out["reference_kind"] = "exact continuum disk limit and first corrector"
+    out["julia_version"] = string(VERSION)
     out["nt"] = nt; out["nr"] = nr; out["dt"] = dt; out["T"] = T; out["theta"] = theta
     for (name, R0, kss) in shapes
         κs = _kappas(kss)
@@ -335,11 +339,16 @@ function run_E5(outdir::AbstractString; quick::Bool=false)
         out["$name/limit/R"] = R0h; out["$name/limit/W"] = R1h
         out["$name/limit/Rhist"] = lim.Rhist[:, 1:4:end]; out["$name/limit/Whist"] = lim.Whist[:, 1:4:end]
         out["$name/limit/times"] = lim.saved_times[1:4:end]
-        println("E5 [$name]: converged references")
-        fine = evolve_limit_rk4(P, M2, resample(R0, 4nt); dt=dt / 4, T=T, store_every=10^9)
-        R0fine = resample(fine.R, nt)
-        limf = evolve_limit(P, M2, resample(R0, 2nt); dt=dt, T=T, nr=2nr, corrector=true, store_every=10^9)
-        R1fine = resample(limf.W, nt)
+        println("E5 [$name]: exact continuum limit and first corrector")
+        # The limiting disk has radius r(t)=1-beta*t. Its equilibrium trace is
+        # r(t)^2*q(theta), where q=0.30*cos(2theta)+0.075*sin(2theta).
+        # R1_t=(beta/2)*lambda_2(r)*r^2*q. Integration using dr=-beta*dt
+        # gives R1=q*(F(1)-F(r)), F(r)=-r^2/2+B^2*atan(r^2/B^2).
+        rfinal = 1.0 - P.beta * T
+        primitive(r) = -r^2 / 2 + P.B^2 * atan(r^2 / P.B^2)
+        R0fine = fill(rfinal, nt)
+        R1fine = (primitive(1.0) - primitive(rfinal)) .* (0.30 .* cos.(2 .* theta) .+ 0.075 .* sin.(2 .* theta))
+        out["$name/limit/R_exact"] = R0fine; out["$name/limit/W_exact"] = R1fine
         out["$name/limit/R_fine"] = R0fine; out["$name/limit/W_fine"] = R1fine
         out["$name/limit/R_matched_minus_fine"] = _norms(R0h .- R0fine)
         out["$name/limit/W_matched_minus_fine"] = _norms(R1h .- R1fine)
@@ -422,178 +431,5 @@ function run_E5(outdir::AbstractString; quick::Bool=false)
         out["$name/orders/rem_wrong_sign"] = observed_orders(κs, rem_wrong)
     end
     save_results(joinpath(outdir, "E5.jld2"), out)
-    return out
-end
-
-# ===========================================================================
-# E6 — loss of smoothness and the curvature criterion (flagship)
-# ===========================================================================
-"""
-Limiting flow of an ellipse until its curvature blows up. Returns the history
-and the extrapolated singular time from the window [wlo, whi] K0 of 1/max K.
-"""
-function limit_corner_run(P::Params, mat::Material, Bax::Real; nt::Int, dt::Real, Tmax::Real, A::Real=1.0,
-        stopK::Real=12.0, wlo::Real=3.0, whi::Real=12.0, store_every::Int=10^9)
-    theta = theta_grid(nt)
-    R0 = ellipse_radius.(theta, A, Bax)
-    K0 = maximum(radial_curvature(R0))
-    stop = (t, R, hist) -> hist["max_curvature"][end] >= stopK * K0 || hist["graph_stretch"][end] > 40 || hist["R_min"][end] < 0.02
-    run = evolve_limit_rk4(P, mat, R0; dt=dt, T=Tmax, filter=true, store_every=store_every, stop=stop)
-    t = run.history["time"]; K = run.history["max_curvature"]
-    Tstar = extrapolated_corner_time(t, K, wlo * K0, whi * K0)
-    reached = K[end] >= stopK * K0
-    return (K0=K0, Tstar=Tstar, reached=reached, t_end=t[end], times=t, maxK=K, run=run)
-end
-
-function run_E6(outdir::AbstractString; quick::Bool=false)
-    out = Dict{String,Any}()
-    P = Params(kappa=0.5)
-    A = 1.0
-    Bs = [0.40, 0.50, 0.60, 0.70, 0.80, 0.85, 0.90, 0.95, 1.00]
-    ntl = quick ? 512 : 2048
-    dtl = quick ? 0.002 : 0.001
-    println("E6.1 threshold verification: limiting flow of the ellipse family")
-    Tstar = zeros(length(Bs)); K0s = similar(Tstar); reached = falses(length(Bs)); tend = similar(Tstar)
-    for (i, Bax) in enumerate(Bs)
-        r = limit_corner_run(P, M2, Bax; nt=ntl, dt=dtl, Tmax=40.0, store_every=quick ? 50 : 100)
-        K0s[i] = r.K0; Tstar[i] = r.Tstar; reached[i] = r.reached; tend[i] = r.t_end
-        out["family/$Bax/times"] = r.times; out["family/$Bax/maxK"] = r.maxK
-        out["family/$Bax/Rhist"] = r.run.Rhist; out["family/$Bax/saved_times"] = r.run.saved_times
-        out["family/$Bax/R_min"] = r.run.history["R_min"]; out["family/$Bax/stretch"] = r.run.history["graph_stretch"]
-        out["family/$Bax/T_area"] = sqrt(spectral_area(ellipse_radius.(theta_grid(ntl), A, Bax))) / (P.beta * M2.imin * sqrt(π))
-        tb = T_bound(r.K0, M2, P.beta)
-        sw = swept_constants(1.0)
-        tbs = T_bound(r.K0; imin=sw.imin, a1=sw.a1, a2=sw.a2, beta=P.beta)
-        @printf("   B=%.2f K0=%.3f  T*^0=%.4f (reached 12K0: %s, t_end=%.3f)  T_bound=%.3f  T_bound(swept)=%.3f\n",
-            Bax, r.K0, r.Tstar, r.reached, r.t_end, tb, tbs)
-    end
-    out["family/Bs"] = Bs; out["family/K0"] = K0s; out["family/Tstar"] = Tstar; out["family/reached"] = collect(reached)
-    out["family/t_end"] = tend
-    out["family/T_bound_global"] = [T_bound(K, M2, P.beta) for K in K0s]
-    sw = swept_constants(1.0)
-    out["family/T_bound_swept"] = [T_bound(K; imin=sw.imin, a1=sw.a1, a2=sw.a2, beta=P.beta) for K in K0s]
-    out["family/kstar_global"] = kstar(M2); out["family/kstar_swept"] = kstar(sw.imin, sw.a1, sw.a2)
-    out["family/B_threshold"] = 1 / sqrt(kstar(M2))
-    out["family/nt"] = ntl; out["family/dt"] = dtl
-
-    println("E6.2 phase diagram over (K_max, contrast)")
-    cs = quick ? [0.5, 1.0, 1.5] : [0.25, 0.50, 0.75, 1.00, 1.25, 1.50]
-    Bp = quick ? [0.4, 0.6, 0.8, 1.0] : [0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
-    ntp = quick ? 256 : 1024
-    ratio = fill(NaN, length(Bp), length(cs)); Tst = similar(ratio); Tbd = similar(ratio); Kp = zeros(length(Bp))
-    for (j, c) in enumerate(cs)
-        mat = M2family(c)
-        for (i, Bax) in enumerate(Bp)
-            r = limit_corner_run(P, mat, Bax; nt=ntp, dt=0.002, Tmax=40.0)
-            Kp[i] = r.K0
-            Tst[i, j] = r.reached ? r.Tstar : NaN
-            Tbd[i, j] = T_bound(r.K0, mat, P.beta)
-            ratio[i, j] = Tst[i, j] / Tbd[i, j]
-        end
-        @printf("   c=%.2f: k*=%.4f  ratios: %s\n", c, kstar(mat), join([@sprintf("%.2f", x) for x in ratio[:, j]], " "))
-    end
-    out["phase/cs"] = cs; out["phase/Bs"] = Bp; out["phase/K0"] = Kp; out["phase/Tstar"] = Tst; out["phase/T_bound"] = Tbd
-    out["phase/ratio"] = ratio; out["phase/kstar"] = [kstar(M2family(c)) for c in cs]
-    out["phase/nt"] = ntp
-
-    println("E6.3 kappa-dependence of the corner time at B = 0.6")
-    Bax = 0.6
-    nt, nr, dt = quick ? (256, 16, 0.005) : (1024, 48, 0.0025)
-    ks = quick ? collect(0:3) : collect(0:8)
-    kappas = _kappas(ks)
-    theta = theta_grid(nt)
-    R0 = ellipse_radius.(theta, A, Bax)
-    K0 = maximum(radial_curvature(R0))
-    level = 3K0; wlo, whi = 2K0, 4K0
-    Tmax = 3.0
-    stopc = (t, R, hist) -> hist["max_curvature"][end] >= 6K0 || hist["graph_stretch"][end] > 40
-    # matched limiting flow (same grid, same Heun) and fine reference
-    liml = evolve_limit(P, M2, R0; dt=dt, T=Tmax, store_every=4, stop=stopc)
-    t_lim = crossing_time(liml.history["time"], liml.history["max_curvature"], level)
-    T_lim = extrapolated_corner_time(liml.history["time"], liml.history["max_curvature"], wlo, whi)
-    fine = limit_corner_run(P, M2, Bax; nt=ntl, dt=dtl, Tmax=40.0, wlo=2.0, whi=4.0, store_every=quick ? 20 : 40)
-    t_fine = crossing_time(fine.times, fine.maxK, level)
-    T_fine = fine.Tstar
-    T_fine_wide = extrapolated_corner_time(fine.times, fine.maxK, 3K0, 12K0)
-    out["sweep/K0"] = K0; out["sweep/level"] = level; out["sweep/window"] = [wlo, whi]
-    out["sweep/t_limit_matched"] = t_lim; out["sweep/T_limit_matched"] = T_lim
-    out["sweep/t_limit_fine"] = t_fine; out["sweep/T_limit_fine"] = T_fine; out["sweep/T_limit_fine_wide"] = T_fine_wide
-    out["sweep/limit/times"] = liml.history["time"]; out["sweep/limit/maxK"] = liml.history["max_curvature"]
-    out["sweep/limit/Rhist"] = liml.Rhist; out["sweep/limit/saved_times"] = liml.saved_times
-    out["sweep/fine/times"] = fine.times; out["sweep/fine/maxK"] = fine.maxK
-    out["sweep/fine/Rhist"] = fine.run.Rhist; out["sweep/fine/saved_times"] = fine.run.saved_times
-    @printf("   limiting flow: t(3K0) = %.5f (matched) / %.5f (fine);  T* = %.5f (matched) / %.5f (fine)\n", t_lim, t_fine, T_lim, T_fine)
-    tk = zeros(length(kappas)); Tk = similar(tk); tend = similar(tk); Kend = similar(tk); stretch = similar(tk)
-    for (ik, κ) in enumerate(kappas)
-        Pk = withkappa(P, κ)
-        @printf("E6.3 kappa = 2^-%d\n", ks[ik])
-        run = evolve_coupled(Pk, M2, R0; nr=nr, dt=dt, T=Tmax, store_every=4, stop=stopc)
-        h = run.history
-        tk[ik] = crossing_time(h["time"], h["max_curvature"], level)
-        Tk[ik] = extrapolated_corner_time(h["time"], h["max_curvature"], wlo, whi)
-        tend[ik] = h["time"][end]; Kend[ik] = h["max_curvature"][end]; stretch[ik] = maximum(h["graph_stretch"])
-        out["sweep/$κ/times"] = h["time"]; out["sweep/$κ/maxK"] = h["max_curvature"]
-        out["sweep/$κ/Rhist"] = run.Rhist; out["sweep/$κ/saved_times"] = run.saved_times
-        out["sweep/$κ/summary"] = run.summary; out["sweep/$κ/R_min"] = h["R_min"]
-        out["sweep/$κ/relative_area_balance"] = h["relative_area_balance"]
-        @printf("   t_kappa=%.5f  T_kappa=%.5f  (shifts %.3e / %.3e)  t_end=%.3f  maxK_end/K0=%.2f  Newton max %d\n",
-            tk[ik], Tk[ik], tk[ik] - t_lim, Tk[ik] - T_lim, tend[ik], Kend[ik] / K0, run.summary["max_newton_iterations"])
-    end
-    out["sweep/kappas"] = kappas; out["sweep/t_kappa"] = tk; out["sweep/T_kappa"] = Tk
-    out["sweep/t_end"] = tend; out["sweep/maxK_end"] = Kend; out["sweep/max_stretch"] = stretch
-    out["sweep/nt"] = nt; out["sweep/nr"] = nr; out["sweep/dt"] = dt
-    out["sweep/orders_t"] = observed_orders(kappas, abs.(tk .- t_lim)); out["sweep/orders_T"] = observed_orders(kappas, abs.(Tk .- T_lim))
-
-    println("E6.4 resolution control")
-    refk = quick ? [0.25] : [0.125, 0.015625]
-    for κ in refk
-        Pk = withkappa(P, κ)
-        nt2 = 2nt; dt2 = dt / 2
-        theta2 = theta_grid(nt2)
-        run = evolve_coupled(Pk, M2, ellipse_radius.(theta2, A, Bax); nr=nr, dt=dt2, T=Tmax, store_every=10^9, stop=stopc)
-        h = run.history
-        out["control/$κ/t_kappa"] = crossing_time(h["time"], h["max_curvature"], level)
-        out["control/$κ/T_kappa"] = extrapolated_corner_time(h["time"], h["max_curvature"], wlo, whi)
-        out["control/$κ/nt"] = nt2; out["control/$κ/dt"] = dt2
-        @printf("   kappa=%g at %d nodes, dt=%g: t_kappa=%.5f  T_kappa=%.5f\n", κ, nt2, dt2, out["control/$κ/t_kappa"], out["control/$κ/T_kappa"])
-    end
-    out["control/kappas"] = refk
-    save_results(joinpath(outdir, "E6.jld2"), out)
-    return out
-end
-
-# ===========================================================================
-# E6b — finer phase diagram over (K_max, contrast) for the limiting flow
-# ===========================================================================
-"""
-Finer phase diagram of the lifespan proposition for the limiting flow of the ellipse
-family (A = 1, B in Bs) under the M2 family with contrast c in cs. Writes
-E6_phase.jld2 with T_*^0, T_bound and their ratio on the grid.
-"""
-function run_E6_phase(outdir::AbstractString; quick::Bool=false, nt::Int=512, dt::Real=0.002,
-        Bs=range(0.40, 1.00, length=25), cs=range(0.25, 1.50, length=11))
-    P = Params(kappa=0.5)
-    Bs = collect(Bs); cs = collect(cs)
-    if quick
-        Bs = Bs[1:6:end]; cs = cs[1:5:end]
-    end
-    nB, nc = length(Bs), length(cs)
-    Tst = fill(NaN, nB, nc); Tbd = similar(Tst); ratio = similar(Tst); reached = falses(nB, nc); tend = similar(Tst)
-    Kp = [maximum(radial_curvature(ellipse_radius.(theta_grid(nt), 1.0, B))) for B in Bs]
-    started = time()
-    for (j, c) in enumerate(cs)
-        mat = M2family(c)
-        for (i, B) in enumerate(Bs)
-            r = limit_corner_run(P, mat, B; nt=nt, dt=dt, Tmax=60.0)
-            Tst[i, j] = r.Tstar; reached[i, j] = r.reached; tend[i, j] = r.t_end
-            Tbd[i, j] = T_bound(r.K0, mat, P.beta)
-            ratio[i, j] = (r.reached ? r.Tstar : r.t_end) / Tbd[i, j]
-        end
-        @printf("E6 phase c=%.3f: k*=%.4f  ratio range [%.3f, %.3f]  unreached %d  (%.0f s)\n", c, kstar(mat),
-            minimum(filter(isfinite, ratio[:, j])), maximum(filter(isfinite, ratio[:, j])), count(.!reached[:, j]), time() - started)
-    end
-    out = Dict{String,Any}("Bs" => Bs, "cs" => cs, "K0" => Kp, "Tstar" => Tst, "T_bound" => Tbd, "ratio" => ratio,
-        "reached" => collect(reached), "t_end" => tend, "kstar" => [kstar(M2family(c)) for c in cs], "nt" => nt, "dt" => dt)
-    save_results(joinpath(outdir, "E6_phase.jld2"), out)
     return out
 end

@@ -92,24 +92,3 @@ function parallel_ellipse_radius(theta::AbstractVector{<:Real}, t::Real, A::Real
     end
     return R
 end
-
-"First time at which the maximal curvature reaches `level`, by linear interpolation."
-function crossing_time(t::AbstractVector, K::AbstractVector, level::Real)
-    for i in 2:length(K)
-        if K[i] >= level && K[i-1] < level
-            return t[i-1] + (level - K[i-1]) * (t[i] - t[i-1]) / (K[i] - K[i-1])
-        end
-    end
-    return NaN
-end
-
-"Zero of the least-squares line through 1/max K on the window low <= max K <= high."
-function extrapolated_corner_time(t::AbstractVector, K::AbstractVector, low::Real, high::Real)
-    idx = findall(k -> low <= k <= high, K)
-    length(idx) < 3 && return NaN
-    x = t[idx]; y = 1 ./ K[idx]
-    xm, ym = mean(x), mean(y)
-    slope = sum((x .- xm) .* (y .- ym)) / sum((x .- xm) .^ 2)
-    intercept = ym - slope * xm
-    return -intercept / slope
-end

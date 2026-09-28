@@ -1,136 +1,75 @@
-# A free boundary problem for a nonlinear electrochemical model
+# Low-conductivity limit for a nonlinear free boundary problem in corrosion modeling
 
 **Daniel Fernández · Denilson Menezes**
 
-[Experiments](#the-experiments) · [Reproduce the results](REPRODUCING.md) · [Paper figures](figures/paper/) · [Citation](CITATION.cff)
+[Reproduce the results](REPRODUCING.md) · [Heterogeneous experiment](HETEROGENEOUS.md) · [Data](data/README.md) · [Citation](CITATION.cff)
 
-A metal inclusion dissolves inside an insulated container. Its moving surface
-is coupled to the electric potential in the surrounding electrolyte, but at
-low conductivity the leading motion depends only on local material properties.
+[![Space-time view of the evolving planar corrosion interface, with time on the vertical axis](figures/previews/fig_evolution3d.png)](figures/paper/fig_evolution3d.pdf)
 
-The paper establishes local well-posedness, justifies this limiting motion
-while the interface remains smooth, and identifies the first electrical
-correction. That correction redistributes dissolution along the surface
-without changing the total rate of metal loss at first order. A curvature
-criterion gives a finite upper bound for the smooth lifespan of the limiting
-flow.
+*A space-time view of the computed evolution. Height represents time; each
+horizontal section is a planar interface. [Open the PDF](figures/paper/fig_evolution3d.pdf).*
 
-<p align="center">
-  <a href="figures/paper/fig_hero.pdf">
-    <img src="figures/previews/fig_hero.png" width="1000" alt="Electric potential around a dissolving flower-shaped inclusion at three successive times">
-  </a>
-</p>
+A metal inclusion dissolves inside an insulated container. A harmonic
+electric potential couples the moving interface to spatially varying
+corrosion current $i_0(x)$ and mixed potential $\phi_{\mathrm{eq}}(x)$.
+The net electrical current balances over the surface, while the positive
+dissolution current removes metal.
 
-*The coupled evolution. The potential is solved on a mesh fitted to the moving
-surface; earlier interfaces are overlaid on the later snapshots. Click any
-figure for its vector PDF.*
+The paper proves local well-posedness and a low-conductivity limit with
+normal speed $V_\nu=\beta i_0(x)$. On smooth time intervals the interface
+error is $O(\kappa)$. Its first electrical correction satisfies a linear
+transport equation; subtracting it leaves an $O(\kappa^2)$ remainder.
+The correction redistributes dissolution without changing its total on the
+same interface at first order.
 
-## The model and its limit
+## Experiments and figures
 
-The potential is harmonic in the electrolyte $\Omega(t)=D\setminus\overline{S(t)}$.
-The container wall is insulated, and the reactive interface
-$\Gamma_*(t)=\partial S(t)$ satisfies
+Two experiments test the asymptotic rates, with independent spatial and
+temporal refinement:
 
-$$
-\kappa\,\partial_\nu\phi_\kappa+i_a(x,\phi_\kappa)=0,
-\qquad V_\nu=\beta\,d(x,\phi_\kappa),
-\qquad i_a=d-r,
-$$
+| Experiment | Reference and purpose |
+| --- | --- |
+| **Receding disk** | Constant $i_0$, an exact limiting radius, and an explicit first corrector. Tests interface and bulk convergence. |
+| **Heterogeneous lobed interface** | Nonconstant $i_0$, an asymmetric nonconvex interface, and unequal reaction slopes. Uses a refined numerical reference and exercises the transported corrector. |
 
-where $\nu$ points into the solid and
+[![Disk benchmark: interface displacement and first- and second-order convergence](figures/previews/fig_corrector.png)](figures/paper/fig_corrector.pdf)
 
-$$
-d(x,z)=i_0(x)e^{A_2(z-\phi_{\mathrm{eq}}(x))},
-\qquad r(x,z)=i_0(x)e^{-A_1(z-\phi_{\mathrm{eq}}(x))}.
-$$
+*Disk benchmark: interface displacement and corrected remainder.
+[PDF](figures/paper/fig_corrector.pdf) · [Conductivity table](tables/conductivity_sweep.tex)*
 
-As $\kappa\to0$, the interface potential approaches $\phi_{\mathrm{eq}}$ and
-the leading velocity is $V_\nu=\beta i_0(x)$. On smooth time intervals the
-interface error is $O(\kappa)$; subtracting the first corrector improves it to
-$O(\kappa^2)$.
+[![Heterogeneous material field, evolving lobed interfaces, and conductivity convergence](figures/previews/fig_heterogeneous.png)](figures/paper/fig_heterogeneous.pdf)
 
-<p align="center">
-  <a href="figures/paper/fig_corrector.pdf">
-    <img src="figures/previews/fig_corrector.png" width="850" alt="Scaled interface displacement and first-order and second-order convergence across four Sobolev norms">
-  </a>
-</p>
+*Heterogeneous recession and convergence against refined numerical references.
+[PDF](figures/paper/fig_heterogeneous.pdf) · [Setup and refinement](HETEROGENEOUS.md)*
 
-*The limit and its corrector. The scaled displacement approaches the discrete
-corrector; the errors follow first- and second-order laws across four Sobolev
-norms. The radial corrector has the opposite sign to the inward normal-graph
-corrector on a circle.*
+[![Bulk potential differences and profiles in the low-conductivity disk experiment](figures/previews/fig_bulk.png)](figures/paper/fig_bulk.pdf)
 
-## The experiments
+*Bulk potential convergence in the disk experiment.
+[PDF](figures/paper/fig_bulk.pdf)*
 
-The repository contains the Julia code, production data, five figures, and two
-generated tables used in the paper's numerical section. Experiments E1, E2,
-and E4 also support the checks reported in its text.
+## Reproduce the results
 
-| Experiment | What it checks | Paper evidence |
-| --- | --- | --- |
-| E1 | Exact shrinking shapes, spatial and temporal refinement, boundary flux recovery | Verification subsection |
-| E2 | Charge and material balances, dissolution excess, lifetime barrier | Balance subsection; [coupled evolution](figures/paper/fig_hero.pdf) |
-| E3 | Frozen trace and energy expansions; sharpness and derivative loss | [Transfer factor](figures/paper/fig_transfer.pdf); [frozen table](tables/frozen_expansion.tex) |
-| E4 | Linearized growth rates and absence of mode damping | Verification subsection |
-| E5 | Limiting flow, electrical corrector, bulk convergence | [Corrector](figures/paper/fig_corrector.pdf), [bulk field](figures/paper/fig_bulk.pdf); [conductivity table](tables/conductivity_sweep.tex) |
-| E6, E6phase | Curvature growth, lifespan bound, conductivity dependence of measured corner times | [Corner formation](figures/paper/fig_corner.pdf) |
-
-<p align="center">
-  <a href="figures/paper/fig_corner.pdf">
-    <img src="figures/previews/fig_corner.png" width="850" alt="Sharpening ellipse, conductivity dependence of measured times, and a phase diagram comparing extrapolated lifespan with the analytical bound">
-  </a>
-</p>
-
-*Loss of smoothness. Curvature concentrates at the ellipse tips. The phase
-diagram compares extrapolated singular times with the analytical lifespan
-bound; grey marks parameters where the criterion is silent.*
-
-## Quick start
-
-The recorded environment uses **Julia 1.13.0**; dependency versions are pinned
-in `Manifest.toml`.
+From the repository root, install the pinned Julia environment and check
+the included records:
 
 ```bash
-git clone https://github.com/danielfdzm/free-boundary-corrosion.git
-cd free-boundary-corrosion
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. scripts/check.jl
-julia --project=. scripts/make_figures.jl
-julia --project=. scripts/make_tables.jl
 ```
 
-The included figures and tables can be regenerated from the archived data
-without rerunning the experiments. New outputs go into `outputs/`. The
-[reproduction guide](REPRODUCING.md) gives commands for fresh simulations and
-explains the reference solutions.
+The [reproduction guide](REPRODUCING.md) gives the commands for regenerating
+figures and tables or running new simulations. The
+[heterogeneous experiment guide](HETEROGENEOUS.md) explains its reference
+solutions and refinement checks. The space-time figure is generated by
+[scripts/plot_evolution3d.jl](scripts/plot_evolution3d.jl) from the computed
+planar evolution.
 
-## Repository guide
+Numerical methods and material laws are in [src/](src/); current records
+are documented in [data/README.md](data/README.md) and
+[data/heterogeneous/README.md](data/heterogeneous/README.md).
+[figures/paper/](figures/paper/) contains the PDFs, and
+[figures/previews/](figures/previews/) contains browser previews.
+Earlier experiments are preserved in [archive/variable_i0/](archive/variable_i0/).
 
-```text
-free-boundary-corrosion/
-├── src/                 finite elements, geometry, flows, experiments E1–E6
-├── scripts/             experiment runner, paper plots, tables, checks
-├── data/                production records and their paper correspondence
-├── figures/paper/       the five manuscript PDFs
-├── figures/previews/    browser previews of those same figures
-├── tables/              the two generated manuscript tables
-├── Project.toml
-├── Manifest.toml
-└── REPRODUCING.md
-```
-
-The numerical method uses fitted piecewise affine finite elements, Newton's
-method for the nonlinear boundary reaction, Fourier differentiation of the
-radial graph, and Heun time stepping. Start with
-[`materials.jl`](src/materials.jl), [`fem.jl`](src/fem.jl), and
-[`flows.jl`](src/flows.jl); [`experiments.jl`](src/experiments.jl) specifies the
-reported runs.
-
-The convergence plots distinguish matched discrete references from refined
-ones. The corner runs stop before loss of smoothness: their singular times
-are extrapolations, and the observed conductivity dependence is not a proved
-rate for the singular time.
-
-Please cite **A free boundary problem for a nonlinear electrochemical model**,
-by Daniel Fernández and Denilson Menezes, and this repository when using these
-materials. See [`CITATION.cff`](CITATION.cff).
+Please cite the accompanying paper and this repository when using these
+materials; author and title metadata are in [CITATION.cff](CITATION.cff).

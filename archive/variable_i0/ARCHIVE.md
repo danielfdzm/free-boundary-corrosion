@@ -1,0 +1,1 @@
+Historical numerical distribution before the constant exchange-current revision. M2 here has i0(x,y)=1+0.25*x+0.10*y^2. These preserved data, code, figures, and tables do not validate the revised constant-i*=1 manuscript. Run with this archived Project.toml and source to reproduce the historical experiments.

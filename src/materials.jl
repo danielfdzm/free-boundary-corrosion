@@ -20,8 +20,8 @@ withkappa(P::Params, kappa) = Params(kappa=kappa, beta=P.beta, A2=P.A2, A1=P.A1,
 
 """
 A material data set: exchange-current scale `i0(x1,x2)`, its gradient, the
-equilibrium (mixed) potential `phieq(x1,x2)`, and the constants of
-the lifespan proposition taken over the closed container `B_B(0)`:
+equilibrium (mixed) potential `phieq(x1,x2)`, and material bounds
+over the closed container `B_B(0)`:
 `imin = min i0`, `a1 = ||grad i0||_inf`, `a2 = ||D^2 i0||_inf`.
 """
 struct Material{F1,F2,F3}
@@ -54,32 +54,10 @@ function M2family(c::Real)
         (x, y) -> 0.30 * (x^2 - y^2) + 0.15 * x * y,
         1.0 - 0.5 * c, c * hypot(0.25, 0.40), 0.20 * c)
 end
-const M2 = M2family(1.0)
-
-"Constants of the lifespan proposition over the swept region |x| <= 1 for the M2 family."
-swept_constants(c::Real) = (imin = 1.0 - 0.25 * c, a1 = c * hypot(0.25, 0.20), a2 = 0.20 * c)
-
-"Curvature threshold k_*^0 = (a1 + sqrt(a1^2 + 4 imin a2)) / (2 imin)."
-kstar(imin, a1, a2) = (a1 + sqrt(a1^2 + 4 * imin * a2)) / (2 * imin)
-kstar(m::Material) = kstar(m.imin, m.a1, m.a2)
-"Smaller root k_- of imin k^2 - a1 k - a2."
-kminus(imin, a1, a2) = (a1 - sqrt(a1^2 + 4 * imin * a2)) / (2 * imin)
-
-"""
-Lifespan bound in closed form:
-T_bound(K) = ln((K - k_-)/(K - k_+)) / (beta imin (k_+ - k_-)) for K > k_+,
-and +Inf when the criterion is silent (K <= k_+).
-"""
-function T_bound(K::Real; imin, a1, a2, beta)
-    kp = kstar(imin, a1, a2)
-    km = kminus(imin, a1, a2)
-    K > kp || return Inf
-    if kp == km   # a1 = a2 = 0: constant-speed flow
-        return 1 / (beta * imin * K)
-    end
-    return log((K - km) / (K - kp)) / (beta * imin * (kp - km))
-end
-T_bound(K::Real, m::Material, beta) = T_bound(K; imin=m.imin, a1=m.a1, a2=m.a2, beta=beta)
+# M2 in the revised paper: constant exchange current and heterogeneous equilibrium potential.
+# M2family remains available only for reproducing historical contrast experiments.
+const M2 = Material("M2-constant-i*=1", (x, y) -> 1.0, (x, y) -> (0.0, 0.0),
+    (x, y) -> 0.30 * (x^2 - y^2) + 0.15 * x * y, 1.0, 0.0, 0.0)
 
 "Dissolution-excess constant c_{A2,A1} of the dissolution-excess lemma."
 excess_constant(P::Params) = P.A2 * P.A1 * min(P.A2, P.A1) / (2 * (P.A2 + P.A1))

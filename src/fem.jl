@@ -177,7 +177,7 @@ function boundary_mass(len::Vector{Float64}, weight::Vector{Float64})
 end
 
 # ---------------------------------------------------------------------------
-# Nonlinear Robin problem: kappa K phi + Q_Gamma[i_a(x, phi) psi_i] = 0
+# Nonlinear Robin problem: kappa K phi + Q_Gamma[i(x, phi) psi_i] = 0
 # ---------------------------------------------------------------------------
 
 """
@@ -368,7 +368,7 @@ function nodal_speed(S::RobinSolver, R::AbstractVector)
     return sp
 end
 
-"Discrete energy J_{kappa,h}(phi) = 1/2 phi'K phi + kappa^{-1} Q_Gamma[I_a(x,phi)]."
+"Discrete energy J_{kappa,h}(phi) = 1/2 phi'K phi + kappa^{-1} Q_Gamma[I(x,phi)]."
 function discrete_energy(S::RobinSolver)
     m = S.mesh; P = S.P; nt = m.nt
     A2, A1 = P.A2, P.A1

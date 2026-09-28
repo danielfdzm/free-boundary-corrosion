@@ -1,30 +1,57 @@
-# Production data used in the paper
+# Production data used in the revised paper
 
-These JLD2 files are the production records behind the paper's numerical
-section. They contain arrays and dictionaries rather than serialized solver
-objects. Load a record with:
+The E5 JLD2 records use constant corrosion current `i_* = 1` and mixed potential
+`phi_eq(x,y) = 0.30*(x^2-y^2) + 0.15*x*y`. They contain arrays and
+dictionaries rather than serialized solver objects. Load a record with:
 
 ```julia
 using FreeBoundaryNumerics
 record = load_results("data/E5.jld2")
+record["i_star"]
 record["disk/kappas"]
 record["disk/dev_norms"]
 record["disk/rem_norms"]
 ```
 
-| Record | Content used in the manuscript |
+| Record | Current manuscript content |
 | --- | --- |
-| `E1.jld2` | Homogeneous disk and ellipse benchmarks; spatial and temporal refinement; variational boundary flux recovery |
-| `E2.jld2` | Charge and area balances; dissolution excess; lifetime barrier; flower snapshots in `fig_hero.pdf` |
-| `E3.jld2` | Frozen-mode conductivity sweep; transfer factors and remainders in `fig_transfer.pdf`; `frozen_expansion.tex` |
-| `E4.jld2` | Linearized growth-rate and mode-amplitude checks reported in the verification text |
-| `E5.jld2` | Coupled and limiting flows, matched and refined correctors, trace and speed remainders, bulk fields; `fig_corrector.pdf`, `fig_bulk.pdf`, `conductivity_sweep.tex` |
-| `E6.jld2` | Ellipse lifespan tests, conductivity sweep, refinement checks, curvature histories and measured times in `fig_corner.pdf` |
-| `E6_phase.jld2` | The 25-by-11 ellipse/contrast phase diagram in `fig_corner.pdf` |
+| `E5.jld2` | Disk conductivity sweep, coupled trajectories, matched discrete limiting flow and corrector, exact continuum references, trace and speed remainders, dissolution excess, and bulk fields; `fig_corrector.pdf`, `fig_bulk.pdf`, and `conductivity_sweep.tex` |
+| `E5_coupled_refinement.jld2` | Coupled disk runs at `kappa = 2^-8` with doubled mesh resolution or half and quarter time steps, comparisons against the same exact continuum references, solver summaries, discarded-mode norms, source/data digests, and `coupled_refinement.tex` |
+| `heterogeneous/heterogeneous.jld2` | Lobed-interface conductivity sweep with nonconstant `i0`, unequal reaction slopes, a transported radial corrector, refined numerical references, and independent mesh/time refinements; `fig_heterogeneous.pdf` and `fig_evolution3d.pdf`; see [HETEROGENEOUS.md](../HETEROGENEOUS.md) |
 
-The experiment definitions in [`src/experiments.jl`](../src/experiments.jl)
-specify each stored field and parameter. Production records occupy about
-56 MiB. Checksums are in [`checksums.sha256`](../checksums.sha256).
+E5 uses `512 x 128`, `dt = 0.0025`, and `T = 0.5`, with conductivities
+`2^-k` for `k = 0,...,8`. Its exact limiting radius is `0.94`. The fields
+`disk/limit/R_exact` and `disk/limit/W_exact` hold the exact continuum
+limiting radius and radial corrector; `R_fine` and `W_fine` are aliases
+retained for plotting compatibility. They do not denote numerical
+refinements in the revised records. The fields `disk/limit/R` and
+`disk/limit/W` hold the matched discrete references.
 
-New experiments write to `outputs/data/`, which is ignored by Git. Reduced
-`--quick` runs write to `outputs/data/quick/`.
+The disk experiment definition in [`src/experiments.jl`](../src/experiments.jl)
+and heterogeneous runner in
+[`scripts/run_heterogeneous.jl`](../scripts/run_heterogeneous.jl)
+specify the stored fields and parameters. Exact formulas and reproduction
+commands are in [`REPRODUCING.md`](../REPRODUCING.md). Artifact checksums are
+in [`checksums.sha256`](../checksums.sha256) and
+[`heterogeneous/checksums.sha256`](heterogeneous/checksums.sha256).
+`scripts/check.jl` validates both manifests and the recorded numerical
+source hashes. Figure regeneration reads the stored records and does not
+alter them.
+
+The space-time plot uses the heterogeneous coupled trajectory at
+`kappa=1/4`. Its height coordinate is time; the simulation itself is planar.
+
+Fresh E5 runs write to `outputs/data/`; reduced `--quick` runs write to
+`outputs/data/quick/`. The independent coupled-refinement command defaults
+to `outputs/coupled_refinement/`, preserving its E5 input record. Its
+`E5_sha256` field identifies that input.
+
+Historical E1–E4 records, the former E5 data and refinement supplements,
+and their source and documentation are preserved in
+[`archive/variable_i0/`](../archive/variable_i0/). They are not used for the
+revised paper. In particular, the earlier `E5_refinement.jld2` time-refinement
+record is replaced by the explicit continuum reference formulas.
+
+The archive retains the matching historical source, documentation, and
+checksum manifest. The current `data/` directory contains only the records
+listed above and their documentation and checksums.

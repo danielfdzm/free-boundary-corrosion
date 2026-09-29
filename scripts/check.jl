@@ -137,6 +137,40 @@ end
 
 check_heterogeneous(root)
 
+function check_long_time(root)
+    dir = joinpath(root, "data", "heterogeneous")
+    d = load_results(joinpath(dir, "heterogeneous.jld2"))
+    L = load_results(joinpath(dir, "long_time.jld2"))
+    (L["nt"], L["nr"], L["dt"]) == (d["nt"], d["nr"], d["dt"]) || error("Long-time record uses a different discretization")
+    (L["A2"], L["A1"], L["beta"], L["B"]) == (d["A2"], d["A1"], d["beta"], d["B"]) || error("Long-time record uses different parameters")
+    L["theta"] == d["theta"] && L["R_initial"] == d["R_initial"] || error("Long-time record uses a different initial interface")
+    for (relative, expected) in L["source_sha256"]
+        actual = open(io -> bytes2hex(sha256(io)), joinpath(root, relative))
+        actual == expected || error("Long-time source differs from the recorded version: $relative")
+    end
+    L["coupled"]["kappa"] == d["coupled"][1]["kappa"] == 0.25 || error("Long-time coupled run is not at kappa=1/4")
+    for (key, T, sweep) in (("limit", 1.0, d["limit"]), ("coupled", 2.5, d["coupled"][1]))
+        run = L[key]
+        run["T"] == T == run["summary"]["T_final"] || error("Incomplete long-time run: $key")
+        times, radii = run["times"], run["Rhist"]
+        first(times) == 0 && last(times) == T && all(>(0), diff(times)) || error("Invalid saved times: long-time $key")
+        size(radii) == (L["nt"], length(times)) || error("Invalid radius history: long-time $key")
+        all(r -> isfinite(r) && 0 < r < L["B"], radii) || error("Invalid interface geometry: long-time $key")
+        radii[:, end] == run["R"] || error("Final radius differs from its history: long-time $key")
+        # Up to t = 0.5 the long runs repeat the stored sweep runs.
+        n = length(sweep["times"])
+        times[1:n] == sweep["times"] && maximum(abs, radii[:, 1:n] .- sweep["Rhist"]) <= 1e-12 ||
+            error("Long-time $key run departs from the stored sweep run")
+    end
+    summary = L["coupled"]["summary"]
+    summary["max_newton_residual"] < 1e-10 || error("Long-time Newton residual exceeds tolerance")
+    summary["max_charge_residual"] < 1e-9 || error("Long-time charge residual exceeds tolerance")
+    summary["min_excess"] > 0 || error("Long-time dissolution excess is not positive")
+    println("Long-time trajectories match their numerical sources and repeat the stored sweep runs up to t = 0.5.")
+end
+
+check_long_time(root)
+
 P = Params(kappa=0.5)
 run = evolve_coupled(P, M0, ones(48); nr=12, dt=0.02, T=1.0)
 radius_error = maximum(abs, run.R .- (1-P.beta))

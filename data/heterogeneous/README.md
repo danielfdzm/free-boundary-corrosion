@@ -7,6 +7,10 @@ of the archived variable-current runs.
 - `heterogeneous.jld2`: complete sweep, limiting flow and transported radial
   corrector, refined numerical reference, independent mesh/time checks,
   diagnostics, execution metadata, and numerical-source hashes.
+- `long_time.jld2`: the limiting interface to `t = 1` and the coupled
+  interface at `kappa = 1/4` to `t = 2.5` on the production mesh, with
+  histories, solver diagnostics, execution metadata, and numerical-source
+  hashes. Up to `t = 0.5` both runs repeat the corresponding sweep runs.
 - `convergence.csv`: H0/H1 deviations and corrected remainders relative to
   the refined pair, together with matched discrete corrected remainders.
 - `refinement.csv`: independent changes in the coupled radius, limiting

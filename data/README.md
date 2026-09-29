@@ -17,7 +17,8 @@ record["disk/rem_norms"]
 | --- | --- |
 | `E5.jld2` | Disk conductivity sweep, coupled trajectories, matched discrete limiting flow and corrector, exact continuum references, trace and speed remainders, dissolution excess, and bulk fields; `fig_corrector.pdf`, `fig_bulk.pdf`, and `conductivity_sweep.tex` |
 | `E5_coupled_refinement.jld2` | Coupled disk runs at `kappa = 2^-8` with doubled mesh resolution or half and quarter time steps, comparisons against the same exact continuum references, solver summaries, discarded-mode norms, source/data digests, and `coupled_refinement.tex` |
-| `heterogeneous/heterogeneous.jld2` | Lobed-interface conductivity sweep with nonconstant `i0`, unequal reaction slopes, a transported radial corrector, refined numerical references, and independent mesh/time refinements; `fig_heterogeneous.pdf` and `fig_evolution3d.pdf`; see [HETEROGENEOUS.md](../HETEROGENEOUS.md) |
+| `heterogeneous/heterogeneous.jld2` | Lobed-interface conductivity sweep with nonconstant `i0`, unequal reaction slopes, a transported radial corrector, refined numerical references, and independent mesh/time refinements; `fig_heterogeneous.pdf`; see [HETEROGENEOUS.md](../HETEROGENEOUS.md) |
+| `heterogeneous/long_time.jld2` | Limiting interface to `t = 1` and coupled trajectory at `kappa = 1/4` to `t = 2.5` on the production mesh, with histories, solver summaries, and source digests; `fig_heterogeneous.pdf` panel (a) and `fig_evolution3d.pdf` |
 
 E5 uses `512 x 128`, `dt = 0.0025`, and `T = 0.5`, with conductivities
 `2^-k` for `k = 0,...,8`. Its exact limiting radius is `0.94`. The fields
@@ -28,8 +29,9 @@ refinements in the revised records. The fields `disk/limit/R` and
 `disk/limit/W` hold the matched discrete references.
 
 The disk experiment definition in [`src/experiments.jl`](../src/experiments.jl)
-and heterogeneous runner in
-[`scripts/run_heterogeneous.jl`](../scripts/run_heterogeneous.jl)
+and heterogeneous runners in
+[`scripts/run_heterogeneous.jl`](../scripts/run_heterogeneous.jl) and
+[`scripts/run_heterogeneous_long.jl`](../scripts/run_heterogeneous_long.jl)
 specify the stored fields and parameters. Exact formulas and reproduction
 commands are in [`REPRODUCING.md`](../REPRODUCING.md). Artifact checksums are
 in [`checksums.sha256`](../checksums.sha256) and
@@ -38,8 +40,9 @@ in [`checksums.sha256`](../checksums.sha256) and
 source hashes. Figure regeneration reads the stored records and does not
 alter them.
 
-The space-time plot uses the heterogeneous coupled trajectory at
-`kappa=1/4`. Its height coordinate is time; the simulation itself is planar.
+The space-time plot uses the long-time coupled trajectory at `kappa=1/4`
+from `heterogeneous/long_time.jld2`. Its height coordinate is time; the
+simulation itself is planar.
 
 Fresh E5 runs write to `outputs/data/`; reduced `--quick` runs write to
 `outputs/data/quick/`. The independent coupled-refinement command defaults

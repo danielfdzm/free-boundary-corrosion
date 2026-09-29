@@ -1,5 +1,5 @@
 # Bright scientific palette shared by the current experiment figures.
-# Computer Modern math via LaTeXStrings, 10pt text, no top/right spines.
+# Computer Modern math via LaTeXStrings, 10pt text, full axis frames.
 using CairoMakie, GeometryBasics, Contour, JLD2, Printf, Statistics, LinearAlgebra
 using FreeBoundaryNumerics
 CairoMakie.activate!(type="pdf")
@@ -7,16 +7,16 @@ CairoMakie.activate!(type="pdf")
 const WATER = colorant"#00A9F4"
 const DEEP = colorant"#283CC9"
 const SOLIDDARK = colorant"#A32BCE"
-const SOLIDBASE = colorant"#FF8A1F"
 const NEUTRAL = colorant"#FAFCFF"
 const WATERFILL = colorant"#78E3FF"
-const MAGENTA = colorant"#ED3D9A"
-const VIOLET = colorant"#7A3FFC"
-const ORDER_COLORS = [WATER, VIOLET, MAGENTA, SOLIDBASE]
+# LaTeX's named blue and red (xcolor), the colours of hyperref's links.
+const TEX_BLUE = colorant"#0000FF"
+const TEX_RED = colorant"#FF0000"
+# xcolor's green (#00FF00) is too light on white; this is the same hue, darker.
+const TEX_GREEN = colorant"#008000"
+const ORDER_COLORS = [colorant"black", TEX_BLUE, TEX_RED, TEX_GREEN]
 const ELECTRO = cgrad([DEEP, colorant"#00C8F0", NEUTRAL,
     colorant"#FFD43B", colorant"#F52B83"], [0.0, 0.25, 0.5, 0.75, 1.0])
-const MATERIAL_COLORS = cgrad([colorant"#246BFD", colorant"#00C6E0",
-    colorant"#66E5AD", colorant"#FFE14A", colorant"#FF8A1F"])
 const GREY = colorant"#6E6E6E"
 const WIDTH = 566.0          # px units; with pt_per_unit = 0.75 this is 5.9 in = \textwidth
 const FS = 13.3              # 10 pt
@@ -25,7 +25,7 @@ const LINESTYLES = [:solid, :dash, :dot, :dashdot, (:dash, :dense), (:dot, :dens
 
 set_theme!(Theme(
     fontsize=FS,
-    Axis=(xgridvisible=false, ygridvisible=false, topspinevisible=false, rightspinevisible=false,
+    Axis=(xgridvisible=false, ygridvisible=false,
         xticklabelsize=FS_SMALL, yticklabelsize=FS_SMALL, titlesize=FS, titlefont=:regular),
     Axis3=(xticklabelsize=FS_SMALL, yticklabelsize=FS_SMALL, zticklabelsize=FS_SMALL,
         xspinesvisible=true, yspinesvisible=true, zspinesvisible=true),
@@ -35,8 +35,15 @@ set_theme!(Theme(
     Scatter=(markersize=6,),
 ))
 
-"Bright, distinguishable colour of the family member kappa = 2^-k."
-kappa_color(k; kmax=8) = get(cgrad([DEEP, WATER, MAGENTA, SOLIDBASE]), k / kmax)
+"""
+Colour scale of the bulk figure for data spanning [lo, hi]: the diverging map
+truncated so that `center` stays white, in `n` bands and without extensions.
+"""
+function banded_diverging(lo, hi; center=0.0, n=24)
+    M = max(center - lo, hi - center)
+    a, b = (1 + (lo - center) / M) / 2, (1 + (hi - center) / M) / 2
+    return cgrad([get(ELECTRO, a + (b - a) * (k - 0.5) / n) for k in 1:n]; categorical=true)
+end
 
 panel_label!(fig, pos, txt) = Label(fig[pos..., TopLeft()], txt; font=:bold, fontsize=FS, padding=(0, 6, 4, 0), halign=:right)
 
@@ -117,11 +124,11 @@ end
 
 "Filled field on the fitted mesh with the solid interior flat, the interface and the wall."
 function field_panel!(ax, R::Vector{Float64}, phi::Vector{Float64}, nr::Int; colorrange, colormap=ELECTRO, levels=24,
-        contours=true, ncontours=12, interface=true, wall=true, streamlines=false, B=2.0)
+        contours=true, ncontours=12, interface=true, wall=true, streamlines=false, B=2.0, extend=:auto)
     mesh, x, y = field_mesh(R, nr; B=B)
     nt = mesh.nt
     tc = tricontourf!(ax, x, y, phi; triangulation=mesh.tri, levels=range(colorrange[1], colorrange[2], length=levels + 1),
-        colormap=colormap, extendlow=:auto, extendhigh=:auto)
+        colormap=colormap, extendlow=extend, extendhigh=extend)
     if contours
         lv = range(colorrange[1], colorrange[2], length=ncontours + 2)[2:end-1]
         for seg in logical_contours(R, phi, nt, nr, collect(lv); B=B)

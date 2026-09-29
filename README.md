@@ -42,7 +42,7 @@ temporal refinement:
 *Heterogeneous recession and convergence against refined numerical references.
 [PDF](figures/paper/fig_heterogeneous.pdf) · [Setup and refinement](HETEROGENEOUS.md)*
 
-[![Bulk potential differences and profiles in the low-conductivity disk experiment](figures/previews/fig_bulk.png)](figures/paper/fig_bulk.pdf)
+[![Scaled bulk potential differences for four conductivities in the disk experiment](figures/previews/fig_bulk.png)](figures/paper/fig_bulk.pdf)
 
 *Bulk potential convergence in the disk experiment.
 [PDF](figures/paper/fig_bulk.pdf)*

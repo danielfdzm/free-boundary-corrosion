@@ -40,8 +40,8 @@ To regenerate the included PDFs directly, use
 | --- | --- |
 | F6: `fig_corrector.pdf` | E5 |
 | F7: `fig_bulk.pdf` | E5 |
-| `fig_heterogeneous.pdf` | Heterogeneous experiment |
-| `fig_evolution3d.pdf` | Heterogeneous coupled trajectory at `kappa=1/4`; vertical coordinate is time |
+| `fig_heterogeneous.pdf` | Heterogeneous experiment; limiting interface at `t=1` from its long-time record |
+| `fig_evolution3d.pdf` | Long-time heterogeneous coupled trajectory at `kappa=1/4`, `0 <= t <= 2.5`; vertical coordinate is time |
 | `conductivity_sweep.tex` | E5 |
 | `coupled_refinement.tex` and CSV | E5 coupled refinement |
 
@@ -75,6 +75,7 @@ For a fresh heterogeneous run and its two plots, use:
 
 ```bash
 julia --project=. scripts/run_heterogeneous.jl
+julia --project=. scripts/run_heterogeneous_long.jl
 julia --project=. scripts/plot_heterogeneous.jl outputs/heterogeneous outputs/figures
 julia --project=. scripts/plot_evolution3d.jl outputs/heterogeneous outputs/figures
 ```

@@ -89,14 +89,29 @@ corrected remainder; the largest individual temporal sensitivity is below
 `0.119%`. These percentages compare each of the three quantities above
 separately with the corrected remainder in the corresponding norm.
 
+## Long-time trajectories
+
+The figures also use `long_time.jld2`, written by
+`scripts/run_heterogeneous_long.jl` with the production mesh and time step:
+the limiting interface to `t = 1` and the coupled interface at `kappa = 1/4`
+to `t = 2.5`. Up to `t = 0.5` both runs repeat the corresponding sweep runs
+exactly. The limiting flow stops being smooth at `T_0 = 2.93`, when its rays
+first focus at the sharpest convex lobe and a corner forms there; its maximal
+curvature grows from `2.38` at `t = 0` to `16.3` at `t = 2.5`. The coupled
+trajectory at `kappa = 1/4` sharpens in the same way (maximal curvature
+`16.9` at `t = 2.5`) and is no longer resolved by 512 Fourier modes after
+`t = 2.6`. No smooth radial-graph trajectory of this experiment reaches
+`t = 5`.
+
 ## Included artifacts and reproduction
 
-The versioned records are in `data/heterogeneous/`: the JLD2 record,
-`convergence.csv`, `refinement.csv`, and their separate checksum manifest.
+The versioned records are in `data/heterogeneous/`: the JLD2 sweep record,
+the long-time record `long_time.jld2`, `convergence.csv`, `refinement.csv`, and their separate checksum manifest.
 The included figures are `figures/paper/fig_heterogeneous.pdf` and
 `figures/paper/fig_evolution3d.pdf`, with PNG previews in
-`figures/previews/`. The latter shows the stored coupled trajectory at
-`kappa=1/4` in space-time: its vertical axis represents time, and every
+`figures/previews/`. The former also shows the limiting interface at
+`t = 1`; the latter shows the coupled trajectory at `kappa=1/4` for
+`0 <= t <= 2.5` in space-time: its vertical axis represents time, and every
 horizontal section is a planar interface.
 
 To regenerate these figures from the included record, run from the
@@ -117,6 +132,7 @@ For a new simulation and plots of its results:
 
 ```bash
 julia --project=. scripts/run_heterogeneous.jl
+julia --project=. scripts/run_heterogeneous_long.jl
 julia --project=. scripts/plot_heterogeneous.jl outputs/heterogeneous outputs/figures
 julia --project=. scripts/plot_evolution3d.jl outputs/heterogeneous outputs/figures
 ```
@@ -125,6 +141,8 @@ The runner writes to `outputs/heterogeneous/`, caching individual solves in
 its `runs/` subdirectory. It checks their numerical source digests and
 parameters before reuse. `--out DIR` changes the output location. A reduced
 resolution can be selected with `--nt 256` and a separate output directory.
+The long-time runner writes `long_time.jld2` to the same default directory
+and also accepts `--out DIR`; it always uses the production resolution.
 
 The stored record includes every final radius, limiting and corrector
 history, Newton and geometric diagnostics, execution times, Julia version,

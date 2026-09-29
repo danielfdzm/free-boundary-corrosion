@@ -19,21 +19,22 @@ left = fig[1, 1] = GridLayout()
 right = fig[1, 2] = GridLayout()
 axg = Axis(left[1, 1]; aspect=DataAspect(), title="(a) Heterogeneous recession",
     xlabel=L"x_1", ylabel=L"x_2", xticks=[-1, 0, 1], yticks=[-1, 0, 1])
-xx = range(-1.30, 1.30, length=601)
-yy = range(-1.30, 1.30, length=601)
+# A fine sampling grid for the display of i0 only; no computed quantity uses it.
+xx = range(-1.30, 1.30, length=2401)
+yy = range(-1.30, 1.30, length=2401)
 field = [hypot(x, y) <= initial_radius(atan(y, x)) ? material(x, y) : NaN for x in xx, y in yy]
 # i0 has no critical point, so its extremes over the initial solid are attained on
 # the interface; they are also the extremes of the space-time figure.
 lo, hi = extrema(material.(d["R_initial"] .* cos.(d["theta"]), d["R_initial"] .* sin.(d["theta"])))
-hm = heatmap!(axg, xx, yy, field; colormap=banded_diverging(lo, hi; center=1.0),
-    colorrange=(lo, hi), rasterize=3)
+hm = heatmap!(axg, xx, yy, field; colormap=banded_diverging(lo, hi; center=1.0, low=COOL_ELECTRO, high=WARM_ELECTRO),
+    colorrange=(lo, hi), rasterize=8)
 th = vcat(d["theta"], 2π)
 closed(v) = vcat(v, v[1])
 rinit = closed(d["R_initial"])
-initplot = lines!(axg, rinit .* cos.(th), rinit .* sin.(th);
-    color=TEX_BLUE, linewidth=1.2, linestyle=:dash)
 rad = closed(long["limit"]["R"])
-finalplot = lines!(axg, rad .* cos.(th), rad .* sin.(th); color=TEX_RED, linewidth=1.7)
+initplot = lines!(axg, rinit .* cos.(th), rinit .* sin.(th);
+    color=:black, linewidth=1.2, linestyle=:dash)
+finalplot = lines!(axg, rad .* cos.(th), rad .* sin.(th); color=:black, linewidth=1.7)
 limits!(axg, -1.30, 1.30, -1.30, 1.30)
 Colorbar(left[1, 2], hm; label=L"i_0(x_1,x_2)", ticks=0.8:0.1:1.2)
 Legend(left[2, 1], [initplot, finalplot], [L"t=0", L"t=1"];
@@ -61,7 +62,7 @@ text!(axe, 0.035, 1.3e-5; text="slope 2", fontsize=10.5, color=GREY, rotation=0.
 limits!(axe, 0.012, 0.32, 4e-6, 0.035)
 Legend(right[2, 1], plots,
     [L"E_0", L"E_1", L"E_0^{\mathrm{corr}}", L"E_1^{\mathrm{corr}}"]; orientation=:horizontal,
-    nbanks=2, tellwidth=false, tellheight=true, colgap=10)
+    nbanks=1, tellwidth=false, tellheight=true, colgap=10)
 colgap!(fig.layout, 22)
 rowgap!(left, 5)
 rowgap!(right, 5)

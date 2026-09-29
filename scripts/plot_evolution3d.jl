@@ -4,7 +4,6 @@
 include(joinpath(@__DIR__, "figure_style.jl"))
 
 const EVOLUTION_ROOT = normpath(joinpath(@__DIR__, ".."))
-const EVOLUTION_INK = colorant"#17324D"
 # Drawn at the paper's scale for \includegraphics[width=0.7\textwidth], so that
 # fonts and the colorbar match the other figures.
 const EVOLUTION_SIZE = (round(Int, 0.7WIDTH), 345)
@@ -29,10 +28,20 @@ function main()
     Y = radius .* sin.(th)
     Z = ones(length(th)) * times'
     current = @. 1 + 0.25X + 0.10Y^2
-    # The colour scale of the bulk figure: its diverging map truncated to the
-    # extremes reached, with i0 = 1 at white, in 24 bands and without extensions.
+    # For the display of i0 only, the surface is sampled on a four times finer
+    # angular grid: each saved interface is refined by trigonometric interpolation,
+    # which is its Fourier representation in the scheme. The lines use the saved nodes.
+    nfine = 4length(theta)
+    thfine = vcat(theta_grid(nfine), 2π)
+    Rfine = reduce(hcat, [resample(R[:, j], nfine) for j in eachindex(times)])
+    Rfine = vcat(Rfine, Rfine[1:1, :])
+    Xfine = Rfine .* cos.(thfine)
+    Yfine = Rfine .* sin.(thfine)
+    Zfine = ones(length(thfine)) * times'
+    # The colour scale of Figure 4(a): 24 bands from LaTeX's blue at the minimum
+    # reached, through cyan, white at i0 = 1, yellow and orange, to LaTeX's red at the maximum.
     lo, hi = extrema(current)
-    bands = banded_diverging(lo, hi; center=1.0)
+    bands = banded_diverging(lo, hi; center=1.0, low=COOL_ELECTRO, high=WARM_ELECTRO)
     view_azimuth = -1.10
     # CairoMakie does not depth-test separate line plots against the surface.
     # Restrict the intermediate contour overlays to outward-facing portions;
@@ -61,22 +70,22 @@ function main()
         xspinecolor_3=(:black,.14), yspinecolor_3=(:black,.14), zspinecolor_3=(:black,.14),
         protrusions=(30, 46, 0, 0))
     limits!(ax, -1.28, 1.28, -1.28, 1.28, 0, 1.02T)
-    shell = surface!(ax, X, Y, Z; color=current, colormap=bands, colorrange=(lo, hi),
-        shading=NoShading, rasterize=4)
+    shell = surface!(ax, Xfine, Yfine, Zfine; color=@.(1 + 0.25Xfine + 0.10Yfine^2),
+        colormap=bands, colorrange=(lo, hi), shading=NoShading, rasterize=6)
     # The rings are measured interface states, not a decorative grid.
     for t in 0.25:0.25:T-0.25
         j = argmin(abs.(times .- t))
         lines!(ax, mask_line(X[:,j], front[:,j]), Y[:,j], Z[:,j];
-            color=(EVOLUTION_INK,.55), linewidth=.75)
+            color=(:black,.55), linewidth=.75)
     end
     # Selected fixed angular coordinates reveal the taper of the radial graph.
     for j in 1:64:length(theta)
         lines!(ax, mask_line(X[j,:], front[j,:]), Y[j,:], Z[j,:];
-            color=(EVOLUTION_INK,.15), linewidth=.55)
+            color=(:black,.15), linewidth=.55)
     end
     initial = lines!(ax, mask_line(X[:,1], front[:,1]), Y[:,1], Z[:,1];
-        color=TEX_BLUE, linewidth=1.9)
-    final = lines!(ax, X[:,end], Y[:,end], Z[:,end]; color=TEX_RED, linewidth=2.3)
+        color=:black, linewidth=1.9, linestyle=:dash)
+    final = lines!(ax, X[:,end], Y[:,end], Z[:,end]; color=:black, linewidth=2.3)
     Colorbar(fig[1, 2], shell; label=L"i_0(x_1,x_2)", ticks=0.8:0.1:1.2,
         height=Relative(.62), tellheight=false)
     tfinal = @sprintf("%g", T)

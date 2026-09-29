@@ -1,6 +1,7 @@
 # Bright scientific palette shared by the current experiment figures.
 # Computer Modern math via LaTeXStrings, 10pt text, full axis frames.
 using CairoMakie, GeometryBasics, Contour, JLD2, Printf, Statistics, LinearAlgebra
+using CairoMakie.Makie.Colors: weighted_color_mean
 using FreeBoundaryNumerics
 CairoMakie.activate!(type="pdf")
 
@@ -35,14 +36,32 @@ set_theme!(Theme(
     Scatter=(markersize=6,),
 ))
 
+const WHITE = colorant"white"
+# Band colours below and above the white centre of `banded_diverging`. The i0
+# figures pass the ELECTRO hues between LaTeX's blue and red: cyan below, yellow and orange above.
+const COOL_ELECTRO = [TEX_BLUE, colorant"#00C8F0", WHITE]
+const WARM_ELECTRO = [WHITE, colorant"#FFD43B", TEX_RED]
+
+"`m` colours evenly spaced along the piecewise-linear path through `stops`."
+function colour_ramp(stops, m)
+    s = length(stops) - 1
+    return map(range(0, 1, length=m)) do t
+        j = min(floor(Int, t * s) + 1, s)
+        weighted_color_mean(j - t * s, stops[j], stops[j+1])
+    end
+end
+
 """
-Colour scale of the bulk figure for data spanning [lo, hi]: the diverging map
-truncated so that `center` stays white, in `n` bands and without extensions.
+Colour scale of the field figures for data spanning [lo, hi], in `n` equal bands
+without extensions: the lowest band is LaTeX's blue, the highest LaTeX's red, and
+the band containing `center` is white. `low` and `high` give the colours passed
+on either side of the centre.
 """
-function banded_diverging(lo, hi; center=0.0, n=24)
-    M = max(center - lo, hi - center)
-    a, b = (1 + (lo - center) / M) / 2, (1 + (hi - center) / M) / 2
-    return cgrad([get(ELECTRO, a + (b - a) * (k - 0.5) / n) for k in 1:n]; categorical=true)
+function banded_diverging(lo, hi; center=0.0, n=24, low=[TEX_BLUE, WHITE], high=[WHITE, TEX_RED])
+    lo < center < hi || error("banded_diverging needs lo < center < hi")
+    kc = clamp(ceil(Int, n * (center - lo) / (hi - lo)), 2, n - 1)
+    colors = vcat(colour_ramp(low, kc), colour_ramp(high, n - kc + 1)[2:end])
+    return cgrad(colors; categorical=true)
 end
 
 panel_label!(fig, pos, txt) = Label(fig[pos..., TopLeft()], txt; font=:bold, fontsize=FS, padding=(0, 6, 4, 0), halign=:right)
@@ -122,7 +141,7 @@ function field_mesh(R::Vector{Float64}, nr::Int; B=2.0)
     return mesh, x, y
 end
 
-"Filled field on the fitted mesh with the solid interior flat, the interface and the wall."
+"Filled field on the fitted mesh with the solid interior flat, the interface (solid) and the wall (dashed) in black."
 function field_panel!(ax, R::Vector{Float64}, phi::Vector{Float64}, nr::Int; colorrange, colormap=ELECTRO, levels=24,
         contours=true, ncontours=12, interface=true, wall=true, streamlines=false, B=2.0, extend=:auto)
     mesh, x, y = field_mesh(R, nr; B=B)
@@ -141,10 +160,10 @@ function field_panel!(ax, R::Vector{Float64}, phi::Vector{Float64}, nr::Int; col
             gridsize=(28, 28), density=0.9, stepsize=0.01, maxsteps=400)
     end
     th = mesh.theta
-    poly!(ax, Point2f.(R .* cos.(th), R .* sin.(th)); color=colorant"#EFECE6", strokecolor=SOLIDDARK, strokewidth=interface ? 1.6 : 0)
+    poly!(ax, Point2f.(R .* cos.(th), R .* sin.(th)); color=colorant"#EFECE6", strokecolor=:black, strokewidth=interface ? 1.6 : 0)
     if wall
         tw = range(0, 2π, length=361)
-        lines!(ax, B .* cos.(tw), B .* sin.(tw); color=WATER, linestyle=:dash, linewidth=0.9)
+        lines!(ax, B .* cos.(tw), B .* sin.(tw); color=:black, linestyle=:dash, linewidth=0.9)
     end
     hidedecorations!(ax); hidespines!(ax)
     return tc

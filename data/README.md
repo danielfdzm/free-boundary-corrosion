@@ -15,8 +15,9 @@ record["disk/rem_norms"]
 
 | Record | Current manuscript content |
 | --- | --- |
-| `E5.jld2` | Disk conductivity sweep, coupled trajectories, matched discrete limiting flow and corrector, exact continuum references, trace and speed remainders, dissolution excess, and bulk fields; `fig_corrector.pdf`, `fig_bulk.pdf`, and `conductivity_sweep.tex` |
+| `E5.jld2` | Disk conductivity sweep, coupled trajectories, matched discrete limiting flow and corrector, exact continuum references, trace and speed remainders, dissolution excess, and bulk fields on the production mesh; `fig_corrector.pdf` and `conductivity_sweep.tex` |
 | `E5_coupled_refinement.jld2` | Coupled disk runs at `kappa = 2^-8` with doubled mesh resolution or half and quarter time steps, comparisons against the same exact continuum references, solver summaries, discarded-mode norms, source/data digests, and `coupled_refinement.tex` |
+| `E5_bulk_fine.jld2` | The E5 disk runs with `kappa = 1, 2^-3, 2^-6, 2^-8` and the limiting flow repeated on the doubled `1024 x 256` mesh with the same `dt` and `T`: final interfaces and potentials, the discrete limiting harmonic potential, solver summaries, and source digests; `fig_bulk.pdf` |
 | `heterogeneous/heterogeneous.jld2` | Lobed-interface conductivity sweep with nonconstant `i0`, unequal reaction slopes, a transported radial corrector, refined numerical references, and independent mesh/time refinements; `fig_heterogeneous.pdf`; see [HETEROGENEOUS.md](../HETEROGENEOUS.md) |
 | `heterogeneous/long_time.jld2` | Limiting interface to `t = 1` and coupled trajectory at `kappa = 1/4` to `t = 2.5` on the production mesh, with histories, solver summaries, and source digests; `fig_heterogeneous.pdf` panel (a) and `fig_evolution3d.pdf` |
 

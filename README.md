@@ -44,8 +44,8 @@ temporal refinement:
 
 [![Scaled bulk potential differences for four conductivities in the disk experiment](figures/previews/fig_bulk.png)](figures/paper/fig_bulk.pdf)
 
-*Bulk potential convergence in the disk experiment.
-[PDF](figures/paper/fig_bulk.pdf)*
+*Bulk potential convergence in the disk experiment, computed on the doubled
+1024 × 256 mesh. [PDF](figures/paper/fig_bulk.pdf)*
 
 ## Reproduce the results
 

@@ -37,28 +37,44 @@ end
 # ===========================================================================
 # F7 — bulk field and the absence of a boundary layer
 # ===========================================================================
-function figure_bulk()
+"""
+Bulk fields of F7: the E5 disk runs repeated on the doubled 1024 x 256 mesh by
+scripts/run_bulk_fine.jl. Reduced (--quick) data fall back to the fields stored in E5.
+"""
+function bulk_fields()
+    path = joinpath(RESDIR, "E5_bulk_fine.jld2")
+    if isfile(path)
+        B = load_results(path)
+        (B["nt"], B["nr"], B["dt"], B["T"]) == (1024, 256, 0.0025, 0.5) || error("Unexpected bulk mesh in $path")
+        return (; i_star=B["i_star"], nr=B["nr"], kappas=B["kappas"], u0=B["limit/u0"],
+            phi=κ -> B["$κ/phi"], R=κ -> B["$κ/R"])
+    end
+    OPTIONS.quick || error("Missing $path; run scripts/run_bulk_fine.jl")
     E5 = loadE("E5")
-    get(E5, "i_star", nothing) == 1.0 || error("Current figures require constant-current E5 data")
-    nr = E5["nr"]
-    kappas = E5["disk/kappas"]
-    u0 = E5["disk/limit/u0"]
+    return (; i_star=get(E5, "i_star", nothing), nr=E5["nr"], kappas=E5["disk/kappas"], u0=E5["disk/limit/u0"],
+        phi=κ -> E5["disk/$κ/phi"], R=κ -> E5["disk/$κ/R"])
+end
+
+function figure_bulk()
+    F = bulk_fields()
+    F.i_star == 1.0 || error("Current figures require constant-current data")
+    nr = F.nr
+    u0 = F.u0
     # One row: scaled differences on four moving domains with a common scale.
-    sel = [κ for κ in (1.0, 0.125, 0.015625, 0.00390625) if κ in kappas]
-    diffs = [(E5["disk/$κ/phi"] .- u0) ./ κ for κ in sel]
+    sel = [κ for κ in (1.0, 0.125, 0.015625, 0.00390625) if κ in F.kappas]
+    diffs = [(F.phi(κ) .- u0) ./ κ for κ in sel]
     dmin = minimum(minimum, diffs); dmax = maximum(maximum, diffs)
-    # Bright diverging colours keep the zero potential difference near white;
-    # truncating the symmetric map to [dmin, dmax] keeps zero white and equal slopes.
-    M = max(-dmin, dmax)
-    DIFFMAP = cgrad([get(ELECTRO, t) for t in range((1 + dmin / M) / 2, (1 + dmax / M) / 2, length=256)])
     # The colour bar spans the extremes reached; the tiny pad keeps the extreme nodes inside the end bands.
+    M = max(-dmin, dmax)
     dmin -= 1e-6 * M; dmax += 1e-6 * M
+    # One colour per contour band: LaTeX's blue at the minimum, white at zero, LaTeX's red at the maximum.
+    DIFFMAP = banded_diverging(dmin, dmax; center=0.0)
     fig = Figure(size=(WIDTH, 165))
     tc = nothing
     for (i, κ) in enumerate(sel)
         k = klog(κ)
         ax = Axis(fig[1, i]; aspect=DataAspect(), title=k == 0 ? L"\kappa=1" : L"\kappa=2^{-%$k}")
-        tc = field_panel!(ax, E5["disk/$κ/R"], diffs[i], nr; colorrange=(dmin, dmax), colormap=DIFFMAP, contours=false, extend=nothing)
+        tc = field_panel!(ax, F.R(κ), diffs[i], nr; colorrange=(dmin, dmax), colormap=DIFFMAP, contours=false, extend=nothing)
     end
     Colorbar(fig[1, length(sel)+1], tc; label=L"(\phi_\kappa-\tilde{u}_0)/\kappa")
     colgap!(fig.layout, 6)

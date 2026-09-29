@@ -51,6 +51,26 @@ for name in coupled["run_names"]
 end
 println("Coupled refinement matches its production input and source; all stored norms are consistent.")
 
+bulk = load_results(joinpath(root, "data", "E5_bulk_fine.jld2"))
+(bulk["nt"], bulk["nr"], bulk["dt"], bulk["T"]) == (2nt, 2 * E5["nr"], E5["dt"], T) || error("Bulk record does not double the E5 mesh")
+bulk["i_star"] == 1.0 && bulk["material"] == M2.name || error("Bulk record uses a different material")
+bulk["kappas"] == [2.0^-k for k in (0, 3, 6, 8)] || error("Incomplete bulk conductivity set")
+for (relative, expected) in bulk["source_sha256"]
+    actual = open(io -> bytes2hex(sha256(io)), joinpath(root, relative))
+    actual == expected || error("Bulk source differs from the recorded version: $relative")
+end
+bulk["limit/summary"]["T_final"] == T || error("Incomplete bulk limiting flow")
+for κ in bulk["kappas"]
+    summary = bulk["$κ/summary"]
+    summary["T_final"] == T && summary["kappa"] == κ || error("Incomplete bulk run: kappa=$κ")
+    summary["max_newton_residual"] < 1e-10 || error("Bulk Newton residual exceeds tolerance: kappa=$κ")
+    summary["max_charge_residual"] < 1e-9 || error("Bulk charge residual exceeds tolerance: kappa=$κ")
+    length(bulk["$κ/phi"]) == length(bulk["limit/u0"]) == bulk["nt"] * (bulk["nr"] + 1) || error("Invalid bulk field: kappa=$κ")
+end
+# At kappa = 2^-8 the bulk run repeats the doubled-mesh coupled refinement run.
+bulk["$(2.0^-8)/R"] == coupled["space_2/R"] || error("Bulk run differs from the doubled-mesh refinement run")
+println("Bulk record doubles the E5 mesh; at kappa=2^-8 it repeats the doubled-mesh refinement run.")
+
 function check_heterogeneous(root)
     d = load_results(joinpath(root, "data", "heterogeneous", "heterogeneous.jld2"))
     nt, nr, dt, T = (d[key] for key in ("nt", "nr", "dt", "T"))

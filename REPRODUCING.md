@@ -18,9 +18,9 @@ separately in [HETEROGENEOUS.md](HETEROGENEOUS.md). Its stored data are under
 `data/heterogeneous/`; its two plots show conductivity convergence and a
 space-time view of the computed planar interface.
 
-The disk production records are `data/E5.jld2` and
-`data/E5_coupled_refinement.jld2`. They use constant corrosion current
-`i_* = 1`. Historical records and their source are preserved under
+The disk production records are `data/E5.jld2`,
+`data/E5_coupled_refinement.jld2`, and `data/E5_bulk_fine.jld2`. They use
+constant corrosion current `i_* = 1`. Historical records and their source are preserved under
 [`archive/variable_i0/`](archive/variable_i0/); they must not be substituted
 for the revised production records.
 
@@ -39,7 +39,7 @@ To regenerate the included PDFs directly, use
 | Figure or table | Input record |
 | --- | --- |
 | F6: `fig_corrector.pdf` | E5 |
-| F7: `fig_bulk.pdf` | E5 |
+| F7: `fig_bulk.pdf` | E5 bulk fields on the doubled `1024 x 256` mesh |
 | `fig_heterogeneous.pdf` | Heterogeneous experiment; limiting interface at `t=1` from its long-time record |
 | `fig_evolution3d.pdf` | Long-time heterogeneous coupled trajectory at `kappa=1/4`, `0 <= t <= 2.5`; vertical coordinate is time |
 | `conductivity_sweep.tex` | E5 |
@@ -61,6 +61,7 @@ The disk production sequence is:
 ```bash
 julia --project=. scripts/run_experiments.jl E5
 julia --project=. scripts/run_coupled_refinement.jl --data outputs/data --out outputs/data
+julia --project=. scripts/run_bulk_fine.jl --out outputs/data
 julia --project=. scripts/make_figures.jl F6 F7 --data outputs/data
 julia --project=. scripts/make_tables.jl --data outputs/data
 ```
@@ -70,6 +71,16 @@ E5 uses the initially unit disk, an insulated outer circle of radius 2,
 `phi_eq(x,y) = 0.30*(x^2-y^2) + 0.15*x*y`. Its production settings are
 512 angular nodes, 128 radial intervals, `dt = 0.0025`, and `T = 0.5`.
 The conductivity sweep is `kappa = 2^-k` for `k = 0,...,8`.
+
+The bulk fields of `fig_bulk.pdf` repeat the E5 runs with `kappa = 1, 2^-3,
+2^-6, 2^-8` and the limiting flow on the doubled `1024 x 256` mesh, with the
+same `dt` and `T`. `run_bulk_fine.jl` caches each run under
+`outputs/data/bulk_fine_runs/`; to run them in parallel, start one process per
+run with `--only limit`, `--only k0`, `--only k3`, `--only k6`, and
+`--only k8`, then call the script once more without `--only` to assemble
+`E5_bulk_fine.jld2`. With `--factor 1` the runs repeat the E5 production runs
+exactly. At `kappa = 2^-8` the doubled-mesh run coincides with the `space_2`
+run of the coupled refinement, which `scripts/check.jl` verifies.
 
 For a fresh heterogeneous run and its two plots, use:
 
@@ -92,7 +103,8 @@ julia --project=. scripts/make_figures.jl F6 F7 --quick
 ```
 
 Quick data and plots go to `outputs/data/quick/` and
-`outputs/figures/quick/`. The reduced run uses `128 x 32`, `dt = 0.01`,
+`outputs/figures/quick/`; the quick `fig_bulk.pdf` uses the fields stored in
+the reduced E5 record. The reduced run uses `128 x 32`, `dt = 0.01`,
 and conductivities through `2^-4`, at the same final time. It is not the
 production experiment. Runtime depends on hardware and Julia compilation.
 

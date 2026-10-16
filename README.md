@@ -2,6 +2,13 @@
 
 **Daniel Fernández · Denilson Menezes**
 
+[![Julia 1.13](https://img.shields.io/badge/Julia-1.13-9558B2?logo=julia&logoColor=white)](Project.toml)
+[![GitHub last commit](https://img.shields.io/github/last-commit/danielfdzm/free-boundary-corrosion)](https://github.com/danielfdzm/free-boundary-corrosion/commits/main)
+[![GitHub repo size](https://img.shields.io/github/repo-size/danielfdzm/free-boundary-corrosion)](https://github.com/danielfdzm/free-boundary-corrosion)
+[![Reproducible](https://img.shields.io/badge/reproducible-pinned%20Manifest-2EA043)](REPRODUCING.md)
+[![Checksums](https://img.shields.io/badge/data-SHA--256%20verified-555555)](checksums.sha256)
+[![Cite](https://img.shields.io/badge/cite-CITATION.cff-blue)](CITATION.cff)
+
 [Reproduce the results](REPRODUCING.md) · [Heterogeneous experiment](HETEROGENEOUS.md) · [Data](data/README.md) · [Citation](CITATION.cff)
 
 [![Space-time view of the evolving planar corrosion interface, with time on the vertical axis](figures/previews/fig_evolution3d.png)](figures/paper/fig_evolution3d.pdf)

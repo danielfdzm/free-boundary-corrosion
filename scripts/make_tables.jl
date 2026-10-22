@@ -2,6 +2,7 @@
 # Current conductivity-sweep and coupled-refinement tables from stored data.
 #   julia --project=. scripts/make_tables.jl [--quick]
 using FreeBoundaryNumerics, JLD2, Printf
+include(joinpath(@__DIR__, "cm_diagnostics.jl"))
 include(joinpath(@__DIR__, "cli.jl"))
 const OPTIONS = parse_cli(ARGS; output="tables", data=true,
     usage="julia --project=. scripts/make_tables.jl [--data DIR] [--out DIR] [--quick]")
@@ -23,15 +24,16 @@ function table_sweep()
     E5 = load_results(joinpath(RESDIR, "E5.jld2"))
     get(E5, "i_star", nothing) == 1.0 || error("Current tables require constant-current E5 data")
     kappas = E5["disk/kappas"]
-    # Exact continuum references only: the matched-reference displacement agrees
-    # to three digits and the matched norms are plotted in the corrector figure.
-    devf = E5["disk/dev_norms_fine"]; remf = E5["disk/rem_norms_fine"]
+    # Recompute sampled Fourier C^m diagnostics from raw radii and correctors.
+    # Both the table and the figure use exact continuum references.
+    diagnostics = disk_cm(E5)
+    devf = diagnostics.dev_exact; remf = diagnostics.rem_exact
     exc = E5["disk/excess"]
     o = (v) -> observed_orders(kappas, v)
     io = IOBuffer()
     println(io, "\\begin{tabular}{@{}lrrrrrr@{}}")
     println(io, "\\toprule")
-    println(io, "\$\\kappa\$ & \$\\|R_\\kappa-R_0\\|_{H^0}\$ & ord. & \$\\|\\rho_\\kappa\\|_{H^0}\$ & ord. & \$\\int_{\\Gamma_\\kappa(T)} i_d-i_*|\\Gamma_\\kappa(T)|\$ & ord.\\\\")
+    println(io, "\$\\kappa\$ & \$\\|R_\\kappa-R_0\\|_{C_N^0}\$ & ord. & \$\\|\\rho_\\kappa\\|_{C_N^0}\$ & ord. & \$\\int_{\\Gamma_\\kappa(T)}(i_d-i_*)\\,d\\ell\$ & ord.\\\\")
     println(io, "\\midrule")
     od0, or0, oex = o(devf[1, :]), o(remf[1, :]), o(exc)
     for i in eachindex(kappas)

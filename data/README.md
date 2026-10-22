@@ -9,8 +9,8 @@ using FreeBoundaryNumerics
 record = load_results("data/E5.jld2")
 record["i_star"]
 record["disk/kappas"]
-record["disk/dev_norms"]
-record["disk/rem_norms"]
+record["disk/dev_norms"]  # original H^m diagnostics, retained for provenance
+record["disk/rem_norms"]  # not the C^m errors used in the current figures
 ```
 
 | Record | Current manuscript content |
@@ -28,6 +28,15 @@ limiting radius and radial corrector; `R_fine` and `W_fine` are aliases
 retained for plotting compatibility. They do not denote numerical
 refinements in the revised records. The fields `disk/limit/R` and
 `disk/limit/W` hold the matched discrete references.
+
+The current convergence plots and tables compute spatial C^m diagnostics
+from these saved radii using [`scripts/cm_diagnostics.jl`](../scripts/cm_diagnostics.jl).
+The maximum of the Fourier derivative sup norms through order m is sampled
+at 16N angular points, with a 32N sampling check. Run
+`julia --project=. scripts/report_cm.jl` to reproduce the derived CSVs,
+orders, refinement ratios, and input/source hashes. Included reports are in
+[`tables/cm_diagnostics/`](../tables/cm_diagnostics/). The raw JLD2 files and
+their original H^m arrays are unchanged.
 
 The disk experiment definition in [`src/experiments.jl`](../src/experiments.jl)
 and heterogeneous runners in

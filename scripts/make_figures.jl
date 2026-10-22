@@ -3,6 +3,7 @@
 #   julia --project=. scripts/make_figures.jl [F6 F7] [--data DIR] [--out DIR]
 # No solver run is needed; each figure takes seconds.
 include(joinpath(@__DIR__, "figure_style.jl"))
+include(joinpath(@__DIR__, "cm_diagnostics.jl"))
 
 include(joinpath(@__DIR__, "cli.jl"))
 const OPTIONS = parse_cli(ARGS; output="figures", data=true,
@@ -20,12 +21,13 @@ function figure_corrector()
     get(E5, "i_star", nothing) == 1.0 || error("Current figures require constant-current E5 data")
     kappas = E5["disk/kappas"]
     fig = Figure(size=(WIDTH, 245))
-    dev = E5["disk/dev_norms"]; rem = E5["disk/rem_norms"]
+    diagnostics = disk_cm(E5)
+    dev = diagnostics.dev_exact; rem = diagnostics.rem_exact
     markers = [:circle, :rect, :utriangle, :diamond]
-    ax = Axis(fig[1, 1]; xlabel=L"\kappa", ylabel=L"\|R_\kappa-\tilde{R}_0\|_{H^m}", xscale=log10, yscale=log10)
+    ax = Axis(fig[1, 1]; xlabel=L"\kappa", ylabel=L"\|R_\kappa-R_0\|_{C_N^m}", xscale=log10, yscale=log10)
     pl = [scatterlines!(ax, kappas, dev[m, :]; color=ORDER_COLORS[m], marker=markers[m], linestyle=LINESTYLES[m], linewidth=1.2) for m in 1:4]
     g1 = slope_guide!(ax, kappas, dev[1, end] * 0.35, kappas[end], 1; linestyle=:dot)
-    ax = Axis(fig[1, 2]; xlabel=L"\kappa", ylabel=L"\|R_\kappa-\tilde{R}_0-\kappa \tilde{R}_1\|_{H^m}", xscale=log10, yscale=log10)
+    ax = Axis(fig[1, 2]; xlabel=L"\kappa", ylabel=L"\|R_\kappa-R_0-\kappa R^{(1)}\|_{C_N^m}", xscale=log10, yscale=log10)
     for m in 1:4
         scatterlines!(ax, kappas, rem[m, :]; color=ORDER_COLORS[m], marker=markers[m], linestyle=LINESTYLES[m], linewidth=1.2)
     end
@@ -33,6 +35,11 @@ function figure_corrector()
     Legend(fig[2, 1:2], [pl..., g1, g2], [L"m=0", L"m=1", L"m=2", L"m=3", "slope 1", "slope 2"]; orientation=:horizontal, tellheight=true, tellwidth=false, nbanks=1)
     rowgap!(fig.layout, 7); colgap!(fig.layout, 25)
     savefig(fig, "fig_corrector"; dir=FIGDIR)
+    root = normpath(joinpath(@__DIR__, ".."))
+    pngdir = normpath(FIGDIR) == joinpath(root, "figures", "paper") ?
+        joinpath(root, "figures", "previews") : FIGDIR
+    mkpath(pngdir)
+    save(joinpath(pngdir, "fig_corrector.png"), fig; px_per_unit=2)
 end
 # ===========================================================================
 # F7 — bulk field and the absence of a boundary layer
@@ -46,12 +53,12 @@ function bulk_fields()
     if isfile(path)
         B = load_results(path)
         (B["nt"], B["nr"], B["dt"], B["T"]) == (1024, 256, 0.0025, 0.5) || error("Unexpected bulk mesh in $path")
-        return (; i_star=B["i_star"], nr=B["nr"], kappas=B["kappas"], u0=B["limit/u0"],
+        return (; i_star=B["i_star"], nr=B["nr"], kappas=B["kappas"], u0=B["limit/u0"], R0=B["limit/R"],
             phi=κ -> B["$κ/phi"], R=κ -> B["$κ/R"])
     end
     OPTIONS.quick || error("Missing $path; run scripts/run_bulk_fine.jl")
     E5 = loadE("E5")
-    return (; i_star=get(E5, "i_star", nothing), nr=E5["nr"], kappas=E5["disk/kappas"], u0=E5["disk/limit/u0"],
+    return (; i_star=get(E5, "i_star", nothing), nr=E5["nr"], kappas=E5["disk/kappas"], u0=E5["disk/limit/u0"], R0=E5["disk/limit/R"],
         phi=κ -> E5["disk/$κ/phi"], R=κ -> E5["disk/$κ/R"])
 end
 
@@ -60,7 +67,8 @@ function figure_bulk()
     F.i_star == 1.0 || error("Current figures require constant-current data")
     nr = F.nr
     u0 = F.u0
-    # One row: scaled differences on four moving domains with a common scale.
+    # Match nodes by angle and radial level, then plot the pulled-back differences
+    # on the common limiting mesh. The stored numerical fields are unchanged.
     sel = [κ for κ in (1.0, 0.125, 0.015625, 0.00390625) if κ in F.kappas]
     diffs = [(F.phi(κ) .- u0) ./ κ for κ in sel]
     dmin = minimum(minimum, diffs); dmax = maximum(maximum, diffs)
@@ -74,9 +82,9 @@ function figure_bulk()
     for (i, κ) in enumerate(sel)
         k = klog(κ)
         ax = Axis(fig[1, i]; aspect=DataAspect(), title=k == 0 ? L"\kappa=1" : L"\kappa=2^{-%$k}")
-        tc = field_panel!(ax, F.R(κ), diffs[i], nr; colorrange=(dmin, dmax), colormap=DIFFMAP, contours=false, extend=nothing)
+        tc = field_panel!(ax, F.R0, diffs[i], nr; colorrange=(dmin, dmax), colormap=DIFFMAP, contours=false, extend=nothing)
     end
-    Colorbar(fig[1, length(sel)+1], tc; label=L"(\phi_\kappa-\tilde{u}_0)/\kappa")
+    Colorbar(fig[1, length(sel)+1], tc; label=L"(\phi_\kappa\circ F_\kappa-\tilde{\phi}_0)/\kappa")
     colgap!(fig.layout, 6)
     savefig(fig, "fig_bulk"; dir=FIGDIR)
 end

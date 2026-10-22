@@ -1,12 +1,13 @@
 #!/usr/bin/env julia
 # Plot only the standalone heterogeneous record; no baseline figures are changed.
 include(joinpath(@__DIR__, "figure_style.jl"))
+include(joinpath(@__DIR__, "cm_diagnostics.jl"))
 
 root = normpath(joinpath(@__DIR__, ".."))
 datadir = isempty(ARGS) ? joinpath(root, "data", "heterogeneous") : abspath(ARGS[1])
 outdir = length(ARGS) < 2 ? joinpath(root, "outputs", "figures") : abspath(ARGS[2])
 mkpath(outdir)
-d = load_results(joinpath(datadir, "heterogeneous.jld2"))
+d = heterogeneous_cm(load_results(joinpath(datadir, "heterogeneous.jld2")))
 long = load_results(joinpath(datadir, "long_time.jld2"))
 long["limit"]["T"] == 1.0 || error("The long-time record lacks the limiting interface at t=1")
 initial_radius(th) = 1 + 0.12cos(3th) + 0.06sin(2th) + 0.04cos(5th + 0.3)
@@ -43,7 +44,7 @@ colsize!(left, 1, Aspect(1, 1.0))
 colgap!(left, 6)
 
 axe = Axis(right[1, 1]; title="(b) Conductivity convergence", xlabel=L"\kappa",
-    ylabel="Error at T = 0.5", xscale=log10, yscale=log10,
+    ylabel=L"C_N^m\ \mathrm{error\ at}\ T=0.5", xscale=log10, yscale=log10,
     xticks=([2.0^-6, 2.0^-4, 2.0^-2], [L"2^{-6}", L"2^{-4}", L"2^{-2}"]),
     yticks=([1e-5,1e-4,1e-3,1e-2], [L"10^{-5}",L"10^{-4}",L"10^{-3}",L"10^{-2}"]))
 k = d["kappas"]

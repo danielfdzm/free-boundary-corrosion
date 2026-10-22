@@ -53,8 +53,14 @@ corrector are independently recomputed with doubled mesh resolution at
 fixed `dt`, and with `dt/2` and `dt/4` at fixed mesh. The CSV separates
 the changes in `R_kappa`, `R_0`, and `kappa*W`; corrected remainders always
 use the same refined reference. These are measured discretization
-sensitivities, not rigorous a posteriori error bounds. The H0/H1 norms use
-the Fourier convention documented in `src/spectral.jl`.
+sensitivities, not rigorous a posteriori error bounds. The current C0/C1
+diagnostics are recomputed from the saved radii by `scripts/cm_diagnostics.jl`:
+for C1, take the larger of the sup norms of the real Fourier interpolant and
+its angular derivative, evaluated at 16N points. A 32N-point evaluation checks
+angular sampling. The original H0/H1 arrays and CSVs remain in the raw record
+for provenance; the current derived CSVs are in `tables/cm_diagnostics/`.
+These measurements test spatial rates at T=.5, not the time derivative in
+the theorem's C1-in-time estimate.
 
 An additional diagnostic integrates only the electrical forcing along the
 same limiting Heun trajectory. Its difference from the full `W` measures
@@ -63,31 +69,31 @@ limiting flow or the electrical discretization.
 
 ## Results and measured discretization sensitivity
 
-For the final conductivity pair `1/32,1/64`, the refined-reference H0/H1
-deviation orders are `0.97950/0.97059`; the corrected-remainder orders are
-`1.97837/1.96322`. At `kappa=1/64` the corrected remainders are
-`1.12399e-5` in H0 and `4.70297e-5` in H1. Omitting the transport and
-zeroth-order terms changes the corrector by `2.626%` in H0 and `4.502%`
-in H1, relative to its full norm.
+For the final conductivity pair `1/32,1/64`, the refined-reference C0/C1
+deviation orders are `0.97594/0.95872`; the corrected-remainder orders are
+`1.97533/1.95667`. At `kappa=1/64` the corrected remainders are
+`1.15280e-5` in C0 and `4.57333e-5` in C1. Omitting the transport and
+zeroth-order terms changes the corrector by `4.055%` in C0 and `6.011%`
+in C1, relative to its full norm.
 
 At `kappa=1/64`, doubling both mesh resolutions at fixed `dt=.005` gives:
 
-| Compared quantity | H0 change | H1 change |
+| Compared quantity | C0 change | C1 change |
 | --- | ---: | ---: |
-| Coupled radius | 2.80624e-7 | 1.83551e-6 |
-| Limiting radius | 1.22e-15 | 1.89e-13 |
-| Conductivity-weighted corrector | 3.00731e-7 | 1.99089e-6 |
+| Coupled radius | 3.09375e-7 | 2.50374e-6 |
+| Limiting radius | 2.39e-15 | 3.27e-13 |
+| Conductivity-weighted corrector | 3.27997e-7 | 2.65933e-6 |
 
 At fixed `512 x 128` mesh, changing `dt=.005` to `.00125` changes the
-coupled radius by `7.14848e-9` in H0 and `5.56089e-8` in H1. Consecutive
-halvings give temporal orders `2.00001` and `2.00004`, respectively; the
-limiting radius has the same second-order behavior. All these comparisons
-are included in `refinement.csv` and the full JLD2 record.
+coupled radius by `1.43420e-8` in C0 and `1.09654e-7` in C1. Consecutive
+halvings give temporal orders `1.99997` and `2.00021`, respectively.
 
-The largest individual spatial sensitivity is below `4.24%` of the smallest
+The largest individual spatial sensitivity is below `5.9%` of the smallest
 corrected remainder; the largest individual temporal sensitivity is below
-`0.119%`. These percentages compare each of the three quantities above
-separately with the corrected remainder in the corresponding norm.
+`0.25%`. These percentages compare each of the three quantities above
+separately with the corrected remainder in the corresponding norm. Run
+`julia --project=. scripts/report_cm.jl` to regenerate all C^m values and
+refinement ratios from the original saved arrays.
 
 ## Long-time trajectories
 

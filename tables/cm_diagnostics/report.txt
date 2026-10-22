@@ -1,0 +1,22 @@
+C^m diagnostics from stored radii; Julia 1.13.0
+Norm: max over j=0:m of |d_theta^j I_N v| on 16N nodes; real cosine Nyquist convention.
+All convergence errors are at the final time T=0.5; these are numerical checks, not proofs of uniform-in-time rates.
+Disk final-pair conductivity orders (kappa=2^-7 to 2^-8):
+  C0: exact dev 0.99552864; exact remainder 2.03302813; matched dev 0.99552864; matched remainder 1.99427445; exact remainder 2.4352188449e-07
+       spatial difference/remainder 0.0407458; time differences 5.107875e-13, 1.227235e-13; time order 2.057312
+  C1: exact dev 0.99482803; exact remainder 2.03657827; matched dev 0.99482803; matched remainder 1.99458815; exact remainder 4.3786791614e-07
+       spatial difference/remainder 0.0452881; time differences 1.865255e-12, 8.886090e-13; time order 1.069752
+  C2: exact dev 0.99603765; exact remainder 2.02964157; matched dev 0.99603765; matched remainder 1.99411239; exact remainder 1.0635646222e-06
+       spatial difference/remainder 0.0373483; time differences 8.821575e-11, 9.740985e-11; time order -0.143031
+  C3: exact dev 0.99485609; exact remainder 2.02243378; matched dev 0.99485609; matched remainder 1.99200431; exact remainder 2.2112737621e-06
+       spatial difference/remainder 0.0407381; time differences 1.840079e-08, 2.048607e-08; time order -0.154876
+Heterogeneous final-pair conductivity orders (kappa=2^-5 to 2^-6):
+  C0: deviation 0.97593738; remainder 1.97533322; remainder 1.1528038375e-05; largest individual refinement/reference sensitivity fraction 0.0284521; forcing-only relative difference 0.0405518
+  C1: deviation 0.95872008; remainder 1.95667122; remainder 4.5733342239e-05; largest individual refinement/reference sensitivity fraction 0.05816; forcing-only relative difference 0.0601063
+Maximum relative 16N-to-32N change: disk plotted errors 6.30348578e-06; heterogeneous plotted errors 3.30463588e-06; refinement quantities 2.95441375e-03.
+C3 time-step discrepancies are consistent with amplified high-frequency floating-point noise; they do not establish a temporal order. The full unfiltered norms remain reported.
+  production_exact_remainder: full C3 2.21127376e-06; modes |k|<=16 C3 2.20992749e-06; high modes C3 9.16630055e-09
+  coupled_spatial_difference: full C3 9.00830897e-08; modes |k|<=16 C3 7.93480775e-08; high modes C3 1.22377004e-08
+  time_production_to_half: full C3 1.84007859e-08; modes |k|<=16 C3 4.41676190e-11; high modes C3 1.84236485e-08
+  time_half_to_quarter: full C3 2.04860731e-08; modes |k|<=16 C3 1.18250849e-11; high modes C3 2.04850740e-08
+Bulk pulled-back P1 C0: smallest-conductivity pair order 0.99183034. No higher spatial derivative rate is inferred from P1 fields.

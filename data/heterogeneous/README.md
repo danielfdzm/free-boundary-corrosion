@@ -11,9 +11,9 @@ of the archived variable-current runs.
   interface at `kappa = 1/4` to `t = 2.5` on the production mesh, with
   histories, solver diagnostics, execution metadata, and numerical-source
   hashes. Up to `t = 0.5` both runs repeat the corresponding sweep runs.
-- `convergence.csv`: H0/H1 deviations and corrected remainders relative to
+- `convergence.csv`: original H0/H1 deviations and corrected remainders relative to
   the refined pair, together with matched discrete corrected remainders.
-- `refinement.csv`: independent changes in the coupled radius, limiting
+- `refinement.csv`: original H0/H1 independent changes in the coupled radius, limiting
   radius, and conductivity-weighted corrector; each corrected remainder
   uses the same refined reference.
 - `checksums.sha256`: verify from the repository root with
@@ -36,3 +36,11 @@ The production mesh is `512 x 128`, `dt=.005`; the reference uses
 containing their separate `R`, `W`, histories, and metadata. Numerical
 references are not exact continuum solutions. A uniform Fourier projection
 onto 512 angular points precedes every comparison between meshes.
+
+The current figure recomputes C0/C1 diagnostics from the saved radii with
+[`scripts/cm_diagnostics.jl`](../../scripts/cm_diagnostics.jl); the original
+H0/H1 arrays and CSVs above remain unchanged. The current C^m convergence
+and refinement CSVs are in [`tables/cm_diagnostics/`](../../tables/cm_diagnostics/).
+Regenerate them with `julia --project=. scripts/report_cm.jl` from the
+repository root. They use maxima of the reconstructed angular derivatives
+on a 16N-point grid and include a 32N-point sampling check.

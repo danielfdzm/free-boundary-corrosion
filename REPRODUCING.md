@@ -8,10 +8,13 @@ The recorded environment uses Julia 1.13.0. From the repository root:
 ```bash
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. scripts/check.jl
+julia --project=. scripts/check_cm.jl
 ```
 
 The check validates both artifact checksum manifests, recorded numerical
-source hashes, reference formulas, and stored refinement norms.
+source hashes, reference formulas, and the original stored Sobolev diagnostics.
+The second check validates the new spatial C^m postprocessing, including
+Fourier derivatives and the even-grid Nyquist mode.
 
 The additional noncircular, spatially heterogeneous experiment is documented
 separately in [HETEROGENEOUS.md](HETEROGENEOUS.md). Its stored data are under
@@ -29,10 +32,13 @@ for the revised production records.
 ```bash
 bash scripts/make_paper_figures.sh
 julia --project=. scripts/make_tables.jl
+julia --project=. scripts/report_cm.jl
 ```
 
 These commands read the versioned records in `data/` and write all four
-current PDFs to `outputs/figures/` and tables to `outputs/tables/`.
+current PDFs to `outputs/figures/`, tables to `outputs/tables/`, and
+C^m diagnostic CSVs and provenance to `outputs/cm_diagnostics/`. The
+included diagnostic reports are in `tables/cm_diagnostics/`.
 To regenerate the included PDFs directly, use
 `bash scripts/make_paper_figures.sh figures/paper`.
 
@@ -50,6 +56,20 @@ For individual plots, `make_figures.jl F6 F7` accepts `--data DIR` and
 the data directory and output directory as positional arguments, defaulting
 to `data/heterogeneous` and `outputs/figures`. The table script accepts
 `--data DIR` and `--out DIR`.
+
+The convergence figures and tables recompute errors from the saved radii,
+using `scripts/cm_diagnostics.jl`; they do not read the historical H^m norm
+arrays as C^m errors. For each order m, the diagnostic is the maximum over
+derivative orders 0 through m of the absolute Fourier derivative, sampled
+at 16N points. It uses the real trigonometric interpolant, splitting the
+Nyquist cosine into its positive and negative frequencies before taking
+derivatives. `report_cm.jl` repeats the evaluation at 32N points and reports
+the change, convergence orders, and independent mesh/time sensitivities.
+Both panels of F6 now use the exact continuum references for m=0,...,3;
+the heterogeneous plot tests m=0,1 against refined numerical references.
+These are final-time spatial tests, not tests of the theorem's time
+derivative or of every derivative order. The bulk plot is qualitative;
+piecewise affine fields do not measure bulk C^m errors for m >= 1.
 
 Recreate all four browser previews from the included PDFs with
 `bash scripts/make_previews.sh`.
@@ -161,7 +181,9 @@ and `--out DIR` options select the input and output directories. There is
 no reduced `--quick` version of this production check.
 
 All differences use Fourier projection onto the common 512-point angular
-grid and the discrete Fourier Sobolev norms in `src/spectral.jl`. Every
+grid. The table recomputes C^m diagnostics from the stored radii using
+`scripts/cm_diagnostics.jl`; the record retains its original Sobolev norms
+for provenance. Every
 corrected remainder subtracts the same exact continuum limiting radius and
 corrector. The record includes final radii, solver summaries, discarded
 Fourier-mode norms, consecutive temporal differences, source/data digests,
@@ -191,7 +213,9 @@ convention. The refinement script rejects an E5 record without the revised
 artifacts. The heterogeneous records have a separate manifest at
 [`data/heterogeneous/checksums.sha256`](data/heterogeneous/checksums.sha256).
 Their source digests cover the numerical solver and experiment runner;
-figure scripts render those stored results without changing them.
+figure and table scripts recompute C^m errors from those stored results
+without changing them. The derived CSVs record their input and diagnostic
+source hashes separately in `tables/cm_diagnostics/`.
 
 The earlier variable-current distribution, including E1–E4, former E5
 records, the corrector-time supplement, and their figures and tables, is

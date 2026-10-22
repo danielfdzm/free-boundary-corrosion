@@ -31,8 +31,10 @@ same interface at first order.
 
 ## Experiments and figures
 
-Two experiments test the asymptotic rates, with independent spatial and
-temporal refinement:
+Two experiments test the spatial C^m rates at the final time, with
+independent spatial and temporal refinement. Errors use maxima of the
+Fourier-reconstructed derivatives through order m (m=0,...,3 for the disk;
+m=0,1 for the heterogeneous interface):
 
 | Experiment | Reference and purpose |
 | --- | --- |
@@ -62,6 +64,7 @@ the included records:
 ```bash
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. scripts/check.jl
+julia --project=. scripts/check_cm.jl
 ```
 
 The [reproduction guide](REPRODUCING.md) gives the commands for regenerating
